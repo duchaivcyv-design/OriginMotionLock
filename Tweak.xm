@@ -2,6 +2,7 @@
 #import <CoreMotion/CoreMotion.h>
 #import <QuartzCore/QuartzCore.h>
 
+// Khai báo interface cho ViewController của màn hình khóa để inject view
 @interface CSCoverSheetViewController : UIViewController
 @property (nonatomic, retain) UIView *originCustomBackgroundView;
 @end
@@ -11,7 +12,7 @@ static CGFloat curX = 0, curY = 0;
 static BOOL enabled = YES;
 static CGFloat sensitivity = 30.0;
 
-// Hàm đọc giá trị từ bảng Cài đặt (Preferences)
+// Hàm đọc giá trị cài đặt từ file plist (để hỗ trợ phần mở rộng sau này)
 static void updatePrefs() {
     NSDictionary *d = [NSDictionary dictionaryWithContentsOfFile:@"/var/jb/var/mobile/Library/Preferences/com.yourname.originmotionlock.plist"];
     if (d) {
@@ -22,43 +23,49 @@ static void updatePrefs() {
 
 %hook CSCoverSheetViewController
 - (void)viewDidLoad {
-    %orig;
+    %orig; // Gọi phương thức gốc của hệ thống
     updatePrefs();
     if (!enabled) return;
     
-    // Khởi tạo giao diện hình nền chuyển động
+    // Kiểm tra và thêm custom view chứa hình nền
     if (!self.originCustomBackgroundView) {
         self.originCustomBackgroundView = [[UIView alloc] initWithFrame:self.view.bounds];
         self.originCustomBackgroundView.userInteractionEnabled = NO;
+        self.originCustomBackgroundView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         
         UIImageView *img = [[UIImageView alloc] initWithFrame:self.originCustomBackgroundView.bounds];
-        img.image = [UIImage contentsOfFile:@"/var/jb/Library/Application Support/OriginMotion/wallpaper.png"];
+        // ĐÃ SỬA LỖI: Dùng đúng phương thức imageWithContentsOfFile để load ảnh từ đường dẫn
+        img.image = [UIImage imageWithContentsOfFile:@"/var/jb/Library/Application Support/OriginMotion/wallpaper.png"];
         img.contentMode = UIViewContentModeScaleAspectFill;
+        img.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        
         [self.originCustomBackgroundView addSubview:img];
+        // Chèn vào dưới cùng của view màn hình khóa
         [self.view insertSubview:self.originCustomBackgroundView atIndex:0];
     }
 
-    // Khởi tạo cảm biến chuyển động CoreMotion
+    // Khởi tạo và bắt đầu nhận dữ liệu cảm biến chuyển động
     if (!motionMgr) motionMgr = [[CMMotionManager alloc] init];
     if ([motionMgr isDeviceMotionAvailable]) {
-        motionMgr.deviceMotionUpdateInterval = 1.0 / 60.0;
+        motionMgr.deviceMotionUpdateInterval = 1.0 / 60.0; // 60 FPS cho mượt
         [motionMgr startDeviceMotionUpdatesToQueue:[NSOperationQueue mainQueue] withHandler:^(CMDeviceMotion *m, NSError *e) {
             if (e || !enabled) return;
             
-            // Thuật toán nội suy Lerp chống giật lag
+            // Thuật toán nội suy Lerp để chống giật lag
             curX += ((CGFloat)m.attitude.roll * sensitivity - curX) * 0.15;
             curY += ((CGFloat)m.attitude.pitch * sensitivity - curY) * 0.15;
             
-            // Tạo hiệu ứng nghiêng không gian 3D
+            // Áp dụng hiệu ứng xoay 3D
             CATransform3D t = CATransform3DIdentity;
-            t.m34 = 1.0 / -500.0;
-            t = CATransform3DRotate(t, -curY * M_PI / 180.0, 1.0, 0.0, 0.0);
-            t = CATransform3DRotate(t, curX * M_PI / 180.0, 0.0, 1.0, 0.0);
+            t.m34 = 1.0 / -500.0; // Tạo chiều sâu phối cảnh
+            t = CATransform3DRotate(t, -curY * M_PI / 180.0, 1.0, 0.0, 0.0); // Nghiêng lên/xuống
+            t = CATransform3DRotate(t, curX * M_PI / 180.0, 0.0, 1.0, 0.0); // Nghiêng trái/phải
             self.originCustomBackgroundView.layer.transform = t;
         }];
     }
 }
 
+// Dọn dẹp cảm biến khi thoát màn hình khóa để tiết kiệm pin
 - (void)viewDidDisappear:(BOOL)animated {
     %orig;
     if (motionMgr && [motionMgr isDeviceMotionActive]) {
@@ -67,9 +74,9 @@ static void updatePrefs() {
 }
 %end
 
+// Constructor để load cài đặt khi tweak khởi chạy
 %ctor {
     updatePrefs();
-    // Lắng nghe thông báo thay đổi cấu hình từ ứng dụng Cài đặt
     CFNotificationCenterAddObserver(
         CFNotificationCenterGetDarwinNotifyCenter(),
         NULL,
