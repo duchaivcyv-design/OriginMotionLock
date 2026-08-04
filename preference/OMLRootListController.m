@@ -1,5 +1,9 @@
 #import <UIKit/UIKit.h>
 
+// Định nghĩa thủ công giá trị cell để không bị lỗi undeclared identifier
+#define PSGroupCell 0
+#define PSSwitchCell 2
+
 @interface OMLRootListController : UIViewController {
     NSArray *_specifiers;
 }
@@ -9,14 +13,11 @@
 
 - (id)specifiers {
     if (!_specifiers) {
-        // Tự tạo danh sách giao diện cài đặt cơ bản trực tiếp không lệ thuộc plist hệ thống
         NSMutableArray *specifiers = [NSMutableArray array];
         
-        // Nhóm cài đặt chính
         id groupSpecifier = [NSClassFromString(@"PSSpecifier") preferenceSpecifierNamed:@"OriginMotionLock Cài đặt" target:nil set:nil get:nil detail:nil cell:PSGroupCell edit:nil];
         [specifiers addObject:groupSpecifier];
         
-        // Nút bật/tắt hiệu ứng
         id switchSpecifier = [NSClassFromString(@"PSSpecifier") preferenceSpecifierNamed:@"Bật hiệu ứng" target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSSwitchCell edit:nil];
         [switchSpecifier setProperty:@"isEnabled" forKey:@"key"];
         [switchSpecifier setProperty:@YES forKey:@"default"];
