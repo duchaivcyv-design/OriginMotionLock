@@ -4,7 +4,6 @@ THEOS_PACKAGE_SCHEME = rootless
 include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = OriginMotionLock
-
 OriginMotionLock_FILES = Tweak.xm
 OriginMotionLock_CFLAGS = -fobjc-arc
 OriginMotionLock_FRAMEWORKS = UIKit Foundation CoreMotion QuartzCore
@@ -12,7 +11,8 @@ OriginMotionLock_ARCHS = arm64
 OriginMotionLock_PLIST = OriginMotionLock.plist
 
 BUNDLE_NAME = OriginMotionLockPrefs
-OriginMotionLockPrefs_FILES = OriginMotionLockPrefsListController.m
+# Trỏ trực tiếp đường dẫn vào thư mục bundle
+OriginMotionLockPrefs_FILES = layout/Library/PreferenceBundles/OriginMotionLockPrefs.bundle/OriginMotionLockPrefsListController.m
 OriginMotionLockPrefs_INSTALL_PATH = /Library/PreferenceBundles
 OriginMotionLockPrefs_FRAMEWORKS = UIKit
 OriginMotionLockPrefs_PRIVATE_FRAMEWORKS = Preferences
