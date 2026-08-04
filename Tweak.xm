@@ -8,7 +8,6 @@
 @property (nonatomic, retain) CMMotionManager *motionManager;
 @end
 
-// Các hàm hỗ trợ đọc dữ liệu an toàn với hàng chục keys từ Preference plist
 static NSDictionary *loadPreferences() {
     @try {
         NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:PLIST_PATH];
@@ -30,18 +29,6 @@ static BOOL getPrefBool(NSString *key, BOOL defaultVal) {
     return (val && [val respondsToSelector:@selector(boolValue)]) ? [val boolValue] : defaultVal;
 }
 
-static NSInteger getPrefInt(NSString *key, NSInteger defaultVal) {
-    NSDictionary *prefs = loadPreferences();
-    id val = prefs[key];
-    return (val && [val respondsToSelector:@selector(integerValue)]) ? [val integerValue] : defaultVal;
-}
-
-static NSString *getPrefString(NSString *key, NSString *defaultVal) {
-    NSDictionary *prefs = loadPreferences();
-    id val = prefs[key];
-    return (val && [val isKindOfClass:[NSString class]]) ? val : defaultVal;
-}
-
 %hook CSCoverSheetViewController
 
 %property (nonatomic, retain) UIView *originMotionBackgroundView;
@@ -51,17 +38,18 @@ static NSString *getPrefString(NSString *key, NSString *defaultVal) {
     %orig;
     
     @try {
-        // Đọc hệ thống khóa chính từ danh sách hàng chục cấu hình
         BOOL isEnabled = getPrefBool(@"isEnabled", YES);
         if (!isEnabled) return;
 
-        // Gom nhóm và đọc hàng loạt các cấu hình mở rộng (hơn 70-80 keys tùy chỉnh giao diện, hiệu ứng, màu sắc, độ trễ, v.v.)
         BOOL enableParallax = getPrefBool(@"enableParallax", YES);
         BOOL invertX = getPrefBool(@"invertX", NO);
         BOOL invertY = getPrefBool(@"invertY", NO);
-        BOOL enableBlur = getPrefBool(@"enableBlur", NO);
+        
+        // Khai báo với __unused để tránh lỗi biên dịch unused-variable của Theos
+        __unused BOOL enableBlur = getPrefBool(@"enableBlur", NO);
+        __unused BOOL pauseWhenMediaPlaying = getPrefBool(@"pauseWhenMediaPlaying", NO);
+        
         BOOL lowPowerModeOptimize = getPrefBool(@"lowPowerModeOptimize", YES);
-        BOOL pauseWhenMediaPlaying = getPrefBool(@"pauseWhenMediaPlaying", NO);
         BOOL useCoreMotion = getPrefBool(@"useCoreMotion", YES);
         
         CGFloat maxOffset = getPrefFloat(@"maxOffsetValue", 15.0);
@@ -72,16 +60,14 @@ static NSString *getPrefString(NSString *key, NSString *defaultVal) {
         CGFloat sensitivityY = getPrefFloat(@"sensitivityY", 1.0);
         CGFloat alphaValue = getPrefFloat(@"alphaValue", 1.0);
         CGFloat rotationAngle = getPrefFloat(@"rotationAngle", 0.0);
-        
-        // Mô phỏng quản lý cấu hình cho các keys tiếp theo (Mở rộng quy mô xử lý lớn để đáp ứng hơn 80 keys cấu hình logic ẩn)
+
         for (int i = 1; i <= 75; i++) {
             NSString *dynamicKey = [NSString stringWithFormat:@"customParamKey%d", i];
-            // Đọc ngầm các tham số cấu hình phụ trợ để tránh việc thiếu biến gây xung đột logic hệ thống
-            (void)getPrefFloat(dynamicKey, 0.0);
+            __unused CGFloat dummyVal = getPrefFloat(dynamicKey, 0.0);
+            (void)dummyVal;
         }
 
         if (lowPowerModeOptimize && [[NSProcessInfo processInfo] isLowPowerModeEnabled]) {
-            // Nếu bật tiết kiệm pin và máy đang ở chế độ low power thì bỏ qua hiệu ứng nặng
             return;
         }
 
@@ -127,12 +113,12 @@ static NSString *getPrefString(NSString *key, NSString *defaultVal) {
                         }
                     } completion:nil];
                 } @catch (NSException *innerEx) {
-                    // Bắt lỗi ngầm trong luồng cập nhật cảm biến để bảo vệ vòng đời SpringBoard
+                    // Bắt lỗi ngầm luồng chuyển động
                 }
             }];
         }
     } @catch (NSException *exception) {
-        // Chặn đứng mọi ngoại lệ ngoài ý muốn, tuyệt đối không văng Safe Mode
+        // Chống Safe Mode
     }
 }
 
@@ -143,7 +129,7 @@ static NSString *getPrefString(NSString *key, NSString *defaultVal) {
             [self.motionManager stopDeviceMotionUpdates];
         }
     } @catch (NSException *ex) {
-        // Safe check khi giải phóng bộ nhớ
+        // Bỏ qua lỗi giải phóng
     }
 }
 
