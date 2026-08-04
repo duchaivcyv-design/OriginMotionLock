@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>items</key>
+    <array>
+        <!-- Nhóm 1: Trạng thái chính -->
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+            <key>label</key>
+            <string>Trạng thái hoạt động</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <true/>
+            <key>defaults</key>
+            <string>com.yourname.originmotionlock</string>
+            <key>key</key>
+            <string>isEnabled</string>
+            <key>label</key>
+            <string>Bật Tweak (Master Switch)</string>
+            <key>icon</key>
+            <string>icon.png</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <false/>
+            <key>defaults</key>
+            <string>com.yourname.originmotionlock</string>
+            <key>key</key>
+            <string>enableDebugLog</string>
+            <key>label</key>
+            <string>Bật Nhật ký Gỡ lỗi (Debug)</string>
+        </dict>
+
+        <!-- Nhóm 2: Điều hướng sang các trang con (Color, Scale, Not) -->
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+            <key>label</key>
+            <string>Danh mục Tùy chỉnh Nâng cao</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSLinkCell</string>
+            <key>detail</key>
+            <string>PSListController</string>
+            <key>isController</key>
+            <true/>
+            <key>label</key>
+            <string>Tùy chỉnh Màu sắc & Giao diện</string>
+            <key>bundleFileName</key>
+            <string>Color</string>
+            <key>icon</key>
+            <string>color_icon.png</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSLinkCell</string>
+            <key>detail</key>
+            <string>PSListController</string>
+            <key>isController</key>
+            <true/>
+            <key>label</key>
+            <string>Tùy chỉnh Tỷ lệ & Chuyển động</string>
+            <key>bundleFileName</key>
+            <string>Scale</string>
+            <key>icon</key>
+            <string>scale_icon.png</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSLinkCell</string>
+            <key>detail</key>
+            <string>PSListController</string>
+            <key>isController</key>
+            <true/>
+            <key>label</key>
+            <string>Tùy chọn Khác & Nâng cao</string>
+            <key>bundleFileName</key>
+            <string>Not</string>
+            <key>icon</key>
+            <string>not_icon.png</string>
+        </dict>
+
+        <!-- Nhóm 3: Thông tin nhà phát triển -->
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+            <key>label</key>
+            <string>Thông tin & Hỗ trợ</string>
+            <key>footerText</key>
+            <string>OriginMotionLock v1.0.0 - Phát triển bởi bạn</string>
+        </dict>
+    </array>
+    <key>title</key>
+    <string>OriginMotionLock</string>
+</dict>
+</plist>
