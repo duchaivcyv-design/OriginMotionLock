@@ -14,8 +14,8 @@ BUNDLE_NAME = OriginMotionLockPrefs
 OriginMotionLockPrefs_FILES = layout/Library/PreferenceBundles/OriginMotionLockPrefs.bundle/OriginMotionLockPrefsListController.m
 OriginMotionLockPrefs_INSTALL_PATH = /Library/PreferenceBundles
 OriginMotionLockPrefs_FRAMEWORKS = UIKit
-OriginMotionLockPrefs_PRIVATE_FRAMEWORKS = Preferences
-OriginMotionLockPrefs_CFLAGS = -fobjc-arc
+OriginMotionLockPrefs_EXTRA_FRAMEWORKS = Preferences
+OriginMotionLockPrefs_CFLAGS = -fobjc-arc -I$(THEOS_INCLUDE_PATH)
 OriginMotionLockPrefs_ARCHS = arm64 arm64e
 
 include $(THEOS_MAKE_PATH)/tweak.mk
