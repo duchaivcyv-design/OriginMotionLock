@@ -1,6 +1,8 @@
 #import <UIKit/UIKit.h>
 
-@interface PSListController : UIViewController
+@interface PSListController : UIViewController {
+    NSArray *_specifiers;
+}
 - (NSArray *)loadSpecifiersFromPlistName:(NSString *)name target:(id)target;
 @end
 
