@@ -1,4 +1,5 @@
-TARGET := iphone:clang:latest:14.0
+THEOS_DEVICE_IP = localhost
+THEOS_DEVICE_PORT = 2222
 INSTALL_TARGET_PROCESSES = SpringBoard
 
 include $(THEOS)/makefiles/common.mk
@@ -6,6 +7,9 @@ include $(THEOS)/makefiles/common.mk
 TWEAK_NAME = OriginMotionLock
 
 OriginMotionLock_FILES = Tweak.xm
-OriginMotionLock_FRAMEWORKS = UIKit CoreMotion QuartzCore
+OriginMotionLock_CFLAGS = -fobjc-arc
+OriginMotionLock_PLIST = OriginMotionLock.plist
 
 include $(THEOS_MAKE_PATH)/tweak.mk
+SUBPROJECTS += preference
+include $(THEOS_MAKE_PATH)/aggregate.mk
