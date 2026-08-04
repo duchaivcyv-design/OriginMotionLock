@@ -10,5 +10,6 @@ OriginMotionLock_FILES = Tweak.xm
 OriginMotionLock_CFLAGS = -fobjc-arc
 OriginMotionLock_FRAMEWORKS = UIKit Foundation CoreMotion QuartzCore
 OriginMotionLock_ARCHS = arm64
+OriginMotionLock_PLIST = OriginMotionLock.plist
 
 include $(THEOS_MAKE_PATH)/tweak.mk
