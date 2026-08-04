@@ -1,5 +1,5 @@
-TARGET := iphone:clang:14.0:14.0
-ARCHS = arm64
+TARGET := iphone:clang
+export ARCHS = arm64
 include $(THEOS)/makefiles/common.mk
 
 BUNDLE_NAME = OriginMotionLockPrefs
