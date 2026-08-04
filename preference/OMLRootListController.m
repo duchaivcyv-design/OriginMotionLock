@@ -1,4 +1,8 @@
-#import <Preferences/PSListController.h>
+#import <UIKit/UIKit.h>
+
+@interface PSListController : UIViewController
+- (NSArray *)loadSpecifiersFromPlistName:(NSString *)name target:(id)target;
+@end
 
 @interface OMLRootListController : PSListController
 @end
