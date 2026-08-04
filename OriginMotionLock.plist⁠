@@ -1,8 +1,7 @@
 {
     Filter = {
         Classes = (
-            "CSCoverSheetViewController",
-            "SBWallpaperController"
+            "CSCoverSheetViewController"
         );
     };
 }
