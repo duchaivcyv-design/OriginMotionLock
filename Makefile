@@ -13,3 +13,5 @@ OriginMotionLock_ARCHS = arm64
 OriginMotionLock_PLIST = OriginMotionLock.plist
 
 include $(THEOS_MAKE_PATH)/tweak.mk
+SUBPROJECTS += preference
+include $(THEOS_MAKE_PATH)/aggregate.mk
