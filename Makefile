@@ -1,6 +1,5 @@
-THEOS_DEVICE_IP = localhost
-THEOS_DEVICE_PORT = 2222
-INSTALL_TARGET_PROCESSES = SpringBoard
+TARGET := iphone:clang:latest:9.0
+THEOS_PACKAGE_SCHEME = rootless
 
 include $(THEOS)/makefiles/common.mk
 
@@ -13,5 +12,3 @@ OriginMotionLock_ARCHS = arm64
 OriginMotionLock_PLIST = OriginMotionLock.plist
 
 include $(THEOS_MAKE_PATH)/tweak.mk
-SUBPROJECTS += preference
-include $(THEOS_MAKE_PATH)/aggregate.mk
