@@ -45,7 +45,6 @@ static BOOL getPrefBool(NSString *key, BOOL defaultVal) {
         BOOL invertX = getPrefBool(@"invertX", NO);
         BOOL invertY = getPrefBool(@"invertY", NO);
         
-        // Khai báo với __unused để tránh lỗi biên dịch unused-variable của Theos
         __unused BOOL enableBlur = getPrefBool(@"enableBlur", NO);
         __unused BOOL pauseWhenMediaPlaying = getPrefBool(@"pauseWhenMediaPlaying", NO);
         
@@ -113,12 +112,10 @@ static BOOL getPrefBool(NSString *key, BOOL defaultVal) {
                         }
                     } completion:nil];
                 } @catch (NSException *innerEx) {
-                    // Bắt lỗi ngầm luồng chuyển động
                 }
             }];
         }
     } @catch (NSException *exception) {
-        // Chống Safe Mode
     }
 }
 
@@ -129,7 +126,6 @@ static BOOL getPrefBool(NSString *key, BOOL defaultVal) {
             [self.motionManager stopDeviceMotionUpdates];
         }
     } @catch (NSException *ex) {
-        // Bỏ qua lỗi giải phóng
     }
 }
 
