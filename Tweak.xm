@@ -27,7 +27,7 @@ static CGFloat rotationAngle = 0.0;
 - (void)originMotion_stopMotionUpdates;
 @end
 
-// Hàm đọc file cấu hình Plist
+// Hàm đọc file cấu hình Plist an toàn
 static void loadPreferences() {
     @autoreleasepool {
         NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:PLIST_PATH];
