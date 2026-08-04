@@ -1,16 +1,21 @@
-TARGET := iphone:clang:latest:14.0
+FINALPACKAGE = 1
+
+export TARGET = iphone:clang:16.5:14.0
+export ADDITIONAL_CFLAGS = -DTHEOS_LEAN_AND_MEAN -fobjc-arc
+
 include $(THEOS)/makefiles/common.mk
 
-BUNDLE_NAME = OriginMotionLockPrefs
+TWEAK_NAME = OriginMotionLock
 
-OriginMotionLockPrefs_FILES = OriginMotionLockRootListController.m OriginMotionLockAppSettingsController.m OrderedDictionary.m
-OriginMotionLockPrefs_INSTALL_PATH = /Library/PreferenceBundles
-OriginMotionLockPrefs_PRIVATE_FRAMEWORKS = Preferences SpringBoardServices OnBoardingKit
-OriginMotionLockPrefs_CFLAGS = -fobjc-arc
-OriginMotionLockPrefs_ARCHS = arm64 arm64e
+OriginMotionLock_FILES = Tweak.xm
+OriginMotionLock_FRAMEWORKS = UIKit Foundation CoreMotion QuartzCore
 
-include $(THEOS_MAKE_PATH)/bundle.mk
+ARCHS = arm64 arm64e
 
-internal-stage::
-	$(ECHO_NOTHING)mkdir -p $(THEOS_STAGING_DIR)/Library/PreferenceLoader/Preferences$(ECHO_END)
-	$(ECHO_NOTHING)cp entry.plist $(THEOS_STAGING_DIR)/Library/PreferenceLoader/Preferences/OriginMotionLock.plist$(ECHO_END)
+include $(THEOS_MAKE_PATH)/tweak.mk
+
+after-install::
+	install.exec "killall -9 SpringBoard"
+
+SUBPROJECTS += originmotionlockprefs
+include $(THEOS_MAKE_PATH)/aggregate.mk
