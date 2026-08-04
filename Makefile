@@ -1,6 +1,6 @@
 FINALPACKAGE = 1
 
-export TARGET = iphone:clang:16.5:14.0
+export TARGET = iphone:clang
 export ADDITIONAL_CFLAGS = -DTHEOS_LEAN_AND_MEAN -fobjc-arc
 
 include $(THEOS)/makefiles/common.mk
