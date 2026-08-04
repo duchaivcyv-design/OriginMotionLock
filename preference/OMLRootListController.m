@@ -1,44 +1,13 @@
-#import <UIKit/UIKit.h>
+#import <Preferences/PSListController.h>
 
-// Định nghĩa thủ công giá trị cell để không bị lỗi undeclared identifier
-#define PSGroupCell 0
-#define PSSwitchCell 2
-
-@interface OMLRootListController : UIViewController {
-    NSArray *_specifiers;
-}
+@interface OMLRootListController : PSListController
 @end
 
 @implementation OMLRootListController
-
-- (id)specifiers {
+- (NSArray *)specifiers {
     if (!_specifiers) {
-        NSMutableArray *specifiers = [NSMutableArray array];
-        
-        id groupSpecifier = [NSClassFromString(@"PSSpecifier") preferenceSpecifierNamed:@"OriginMotionLock Cài đặt" target:nil set:nil get:nil detail:nil cell:PSGroupCell edit:nil];
-        [specifiers addObject:groupSpecifier];
-        
-        id switchSpecifier = [NSClassFromString(@"PSSpecifier") preferenceSpecifierNamed:@"Bật hiệu ứng" target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSSwitchCell edit:nil];
-        [switchSpecifier setProperty:@"isEnabled" forKey:@"key"];
-        [switchSpecifier setProperty:@YES forKey:@"default"];
-        [switchSpecifier setProperty:@"com.yourname.originmotionlock" forKey:@"defaults"];
-        [specifiers addObject:switchSpecifier];
-        
-        _specifiers = [specifiers copy];
+        _specifiers = [self loadSpecifiersFromPlistName:@"Root" target:self];
     }
     return _specifiers;
 }
-
-- (id)readPreferenceValue:(id)specifier {
-    NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:@"/var/jb/var/mobile/Library/Preferences/com.yourname.originmotionlock.plist"];
-    return [prefs objectForKey:[specifier propertyForKey:@"key"]] ?: @YES;
-}
-
-- (void)setPreferenceValue:(id)value specifier:(id)specifier {
-    NSMutableDictionary *prefs = [NSMutableDictionary dictionaryWithContentsOfFile:@"/var/jb/var/mobile/Library/Preferences/com.yourname.originmotionlock.plist"] ?: [NSMutableDictionary dictionary];
-    [prefs setObject:value forKey:[specifier propertyForKey:@"key"]];
-    [prefs writeToFile:@"/var/jb/var/mobile/Library/Preferences/com.yourname.originmotionlock.plist" atomically:YES];
-    CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), CFSTR("com.yourname.originmotionlock/settingschanged"), NULL, NULL, YES);
-}
-
 @end
