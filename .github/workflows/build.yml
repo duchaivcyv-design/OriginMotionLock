@@ -1,0 +1,29 @@
+name: Build Theos Tweak
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup Theos
+      run: |
+        git clone --recursive https://github.com/theos/theos.git $HOME/theos
+        git clone https://github.com/theos/sdks.git $HOME/theos/sdks
+
+    - name: Build Package
+      env:
+        THEOS: /Users/runner/theos
+      run: |
+        make package THEOS_PACKAGE_SCHEME=rootless
+
+    - name: Upload Artifact (.deb)
+      uses: actions/upload-artifact@v4
+      with:
+        name: OriginMotionLock-deb
+        path: packages/*.deb
