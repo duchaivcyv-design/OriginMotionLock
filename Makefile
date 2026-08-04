@@ -11,7 +11,7 @@ ARCHS = arm64
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 
-# Bắt buộc phải có đoạn này để nó build thư mục cài đặt:
+# Sửa thành += chuẩn cú pháp Theos:
 SUBPROJECTS += originmotionlockprefs
 
 include $(THEOS_MAKE_PATH)/aggregate.mk
