@@ -1,133 +1,376 @@
 #import <UIKit/UIKit.h>
-#import <CoreMotion/CoreMotion.h>
+#include <sys/sysctl.h>
+#include <sys/utsname.h>
+#include "libhooker.h"
+#define CGRectSetY(rect, y) CGRectMake(rect.origin.x, y, rect.size.width, rect.size.height)
 
-#define PLIST_PATH @"/var/mobile/Library/Preferences/com.yourname.originmotionlock.plist"
+NSInteger statusBarStyle, keyboardSpacing;
+BOOL enabled, wantsKeyboardDock,wants11Camera, wantsbottomInset;
+BOOL disableGestures = NO, wantsGesturesDisabledWhenKeyboard, wantsiPadMultitasking;
+BOOL wantsDeviceSpoofing, wantsCompatabilityMode;
 
-@interface CSCoverSheetViewController : UIViewController
-@property (nonatomic, retain) UIView *originMotionBackgroundView;
-@property (nonatomic, retain) CMMotionManager *motionManager;
-@end
+%group ForceDefaultKeyboard
 
-static NSDictionary *loadPreferences() {
-    @try {
-        NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:PLIST_PATH];
-        return dict ? dict : [NSDictionary dictionary];
-    } @catch (NSException *exception) {
-        return [NSDictionary dictionary];
-    }
+%hook UIKeyboardImpl
++(UIEdgeInsets)deviceSpecificPaddingForInterfaceOrientation:(NSInteger)orientation inputMode:(id)mode {
+	UIEdgeInsets orig = %orig;
+	orig.left =  0;
+	orig.right = 0;
+    orig.bottom = 0;
+	return orig;
 }
-
-static CGFloat getPrefFloat(NSString *key, CGFloat defaultVal) {
-    NSDictionary *prefs = loadPreferences();
-    id val = prefs[key];
-    return (val && [val respondsToSelector:@selector(floatValue)]) ? [val floatValue] : defaultVal;
++(BOOL)showsGlobeAndDictationKeysExternally {
+    return NO;
 }
-
-static BOOL getPrefBool(NSString *key, BOOL defaultVal) {
-    NSDictionary *prefs = loadPreferences();
-    id val = prefs[key];
-    return (val && [val respondsToSelector:@selector(boolValue)]) ? [val boolValue] : defaultVal;
-}
-
-%hook CSCoverSheetViewController
-
-// %property ĐÃ ĐƯỢC ĐẶT ĐÚNG VỊ TRÍ BÊN TRONG %hook ĐỂ KHÔNG BỊ LỖI BIÊN DỊCH
-%property (nonatomic, retain) UIView *originMotionBackgroundView;
-%property (nonatomic, retain) CMMotionManager *motionManager;
-
-- (void)viewDidLoad {
-    %orig;
-    
-    @try {
-        BOOL isEnabled = getPrefBool(@"isEnabled", YES);
-        if (!isEnabled) return;
-
-        BOOL enableParallax = getPrefBool(@"enableParallax", YES);
-        BOOL invertX = getPrefBool(@"invertX", NO);
-        BOOL invertY = getPrefBool(@"invertY", NO);
-        
-        __unused BOOL enableBlur = getPrefBool(@"enableBlur", NO);
-        __unused BOOL pauseWhenMediaPlaying = getPrefBool(@"pauseWhenMediaPlaying", NO);
-        
-        BOOL lowPowerModeOptimize = getPrefBool(@"lowPowerModeOptimize", YES);
-        BOOL useCoreMotion = getPrefBool(@"useCoreMotion", YES);
-        
-        CGFloat maxOffset = getPrefFloat(@"maxOffsetValue", 15.0);
-        CGFloat customScale = getPrefFloat(@"scaleValue", 1.2);
-        CGFloat updateInterval = getPrefFloat(@"updateInterval", 1.0 / 60.0);
-        CGFloat dampingFactor = getPrefFloat(@"dampingFactor", 0.1);
-        CGFloat sensitivityX = getPrefFloat(@"sensitivityX", 1.0);
-        CGFloat sensitivityY = getPrefFloat(@"sensitivityY", 1.0);
-        CGFloat alphaValue = getPrefFloat(@"alphaValue", 1.0);
-        CGFloat rotationAngle = getPrefFloat(@"rotationAngle", 0.0);
-
-        for (int i = 1; i <= 75; i++) {
-            NSString *dynamicKey = [NSString stringWithFormat:@"customParamKey%d", i];
-            __unused CGFloat dummyVal = getPrefFloat(dynamicKey, 0.0);
-            (void)dummyVal;
-        }
-
-        if (lowPowerModeOptimize && [[NSProcessInfo processInfo] isLowPowerModeEnabled]) {
-            return;
-        }
-
-        if (enableParallax && !self.originMotionBackgroundView) {
-            CGRect bounds = self.view.bounds;
-            CGFloat extraSpace = 40.0 * (customScale > 0 ? customScale : 1.0);
-            
-            self.originMotionBackgroundView = [[UIView alloc] initWithFrame:CGRectMake(-extraSpace/2, -extraSpace/2, bounds.size.width + extraSpace, bounds.size.height + extraSpace)];
-            self.originMotionBackgroundView.userInteractionEnabled = NO;
-            self.originMotionBackgroundView.alpha = alphaValue;
-            
-            [self.view insertSubview:self.originMotionBackgroundView atIndex:0];
-        }
-
-        if (useCoreMotion && !self.motionManager) {
-            self.motionManager = [[CMMotionManager alloc] init];
-        }
-
-        if (self.motionManager && [self.motionManager isDeviceMotionAvailable]) {
-            self.motionManager.deviceMotionUpdateInterval = (updateInterval > 0) ? updateInterval : (1.0 / 60.0);
-            
-            [self.motionManager startDeviceMotionUpdatesToQueue:[NSOperationQueue mainQueue] withHandler:^(CMDeviceMotion *motion, NSError *error) {
-                if (error || !motion || !enableParallax) return;
-
-                @try {
-                    double roll = motion.attitude.roll;
-                    double pitch = motion.attitude.pitch;
-
-                    if (invertX) roll = -roll;
-                    if (invertY) pitch = -pitch;
-
-                    CGFloat finalX = roll * maxOffset * sensitivityX;
-                    CGFloat finalY = pitch * maxOffset * sensitivityY;
-
-                    CGAffineTransform transform = CGAffineTransformMakeTranslation(finalX, finalY);
-                    if (rotationAngle != 0.0) {
-                        transform = CGAffineTransformRotate(transform, rotationAngle);
-                    }
-                    
-                    [UIView animateWithDuration:dampingFactor delay:0 options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction | UIViewAnimationOptionCurveLinear animations:^{
-                        if (self.originMotionBackgroundView) {
-                            self.originMotionBackgroundView.transform = transform;
-                        }
-                    } completion:nil];
-                } @catch (NSException *innerEx) {
-                }
-            }];
-        }
-    } @catch (NSException *exception) {
-    }
-}
-
-- (void)viewDidDisappear:(BOOL)animated {
-    %orig;
-    @try {
-        if (self.motionManager && [self.motionManager isDeviceMotionActive]) {
-            [self.motionManager stopDeviceMotionUpdates];
-        }
-    } @catch (NSException *ex) {
-    }
-}
-
 %end
+%end
+
+%group StatusBarX
+%hook UIScrollView
+- (UIEdgeInsets)adjustedContentInset {
+	UIEdgeInsets orig = %orig;
+
+    if (orig.top == 64) orig.top = 88; 
+    else if (orig.top == 32) orig.top = 0;
+    else if (orig.top == 128) orig.top = 152;
+
+    return orig;
+}
+%end
+%end
+
+%group KeyboardDock
+%hook UIKeyboardImpl
++(UIEdgeInsets)deviceSpecificPaddingForInterfaceOrientation:(NSInteger)orientation inputMode:(id)mode {
+    UIEdgeInsets orig = %orig;
+    if (!(%c(BarmojiCollectionView) || %c(DockXServer)))
+         orig.bottom = keyboardSpacing;
+    if (orientation == 4)  {
+        orig.left = 0;
+        orig.right = 0;
+    }
+    return orig;
+}
+%end
+
+%hook UIKeyboardDockView
+- (CGRect)bounds {
+    CGRect bounds = %orig;
+    if (!(%c(BarmojiCollectionView) || %c(DockXServer)))
+        bounds.size.height += (-0.5*keyboardSpacing) + 40;
+
+    return bounds;
+}
+%end
+%end
+
+%group iPhone11Cam
+%hook CAMCaptureCapabilities 
+-(BOOL)isCTMSupported {
+    return YES;
+}
+%end
+
+%hook CAMViewfinderViewController 
+-(BOOL)_wantsHDRControlsVisible{
+    return NO;
+}
+%end
+
+%hook CAMViewfinderViewController 
+-(BOOL)_shouldUseZoomControlInsteadOfSlider {
+    return YES;
+}
+%end
+%end
+
+// Adds a bottom inset to the camera app.
+%group CameraFix
+%hook CAMBottomBar 
+- (void)setFrame:(CGRect)frame {
+    %orig(CGRectSetY(frame, frame.origin.y -40));
+}
+%end
+
+%hook CAMZoomControl
+- (void)setFrame:(CGRect)frame {
+    %orig(CGRectSetY(frame, frame.origin.y -30));
+}
+%end
+%end
+
+%group UIKitiPadMultitasking
+%hook UITraitCollection
++(UITraitCollection *)traitCollectionWithHorizontalSizeClass:(UIUserInterfaceSizeClass)arg1 {
+    if(UIDeviceOrientationIsLandscape([UIDevice currentDevice].orientation))
+        return %orig(2);
+    return %orig;
+}
+%end
+%end
+
+%group disableGesturesWhenKeyboard // iOS 13.4 and up
+%hook SBFluidSwitcherGestureManager
+- (void)grabberTongueBeganPulling:(id)arg1 withDistance:(double)arg2 andVelocity:(double)arg3 andGesture:(id)arg4  {
+    if (!disableGestures)
+        %orig;
+}
+%end
+%end
+
+static int (*_orig_sysctl)(const int *name, u_int namelen, void *oldp, size_t *oldlenp, const void *newp, size_t newlen);
+static int _function_sysctl(const int *name, u_int namelen, void *oldp, size_t *oldlenp, const void *newp, size_t newlen) {
+	if (namelen == 2 && name[0] == CTL_HW && name[1] == HW_MACHINE && oldp) {
+        int const ret = _orig_sysctl(name, namelen, oldp, oldlenp, newp, newlen);
+        const char *mechine1 = "iPhone12,1";
+        strncpy((char*)oldp, mechine1, strlen(mechine1));
+        return ret;
+    } else {
+        return _orig_sysctl(name, namelen, oldp, oldlenp, newp, newlen);
+    }
+}
+
+static int (*_orig_sysctlbyname)(const char *name, void *oldp, size_t *oldlenp, void *newp, size_t newlen);
+static int _function_sysctlbyname(const char *name, void *oldp, size_t *oldlenp, void *newp, size_t newlen) {
+	if (strcmp(name, "hw.machine") == 0) {
+        int ret = _orig_sysctlbyname(name, oldp, oldlenp, newp, newlen);
+        if (oldp) {
+            const char *mechine1 = "iPhone12,1";
+            strcpy((char *)oldp, mechine1);
+            *oldlenp = sizeof(mechine1);
+        }
+        return ret;
+    } else {
+        return _orig_sysctlbyname(name, oldp, oldlenp, newp, newlen);
+    }
+}
+
+static int (*_orig_uname)(struct utsname *value);
+static int _function_uname(struct utsname *value) {
+	int const ret = _orig_uname(value);
+	NSString *utsmachine = @"iPhone12,1";
+    const char *utsnameCh = utsmachine.UTF8String; 
+    strcpy(value->machine, utsnameCh);
+    return ret;
+}
+
+
+%group CompatabilityMode
+%hook UIScreen
+- (CGRect)bounds {
+	CGRect bounds = %orig;
+    bounds.size.height > bounds.size.width ? bounds.size.height = 812 : bounds.size.width = 812;
+	return bounds;
+}
+%end
+%end 
+
+@interface UIWindow (little12)
+@property (assign,nonatomic) UIEdgeInsets little12safeAreaSuperview;
+@end 
+
+%hook UIWindow
+%property (assign,nonatomic) UIEdgeInsets little12safeAreaSuperview;
+-(UIEdgeInsets)_safeAreaInsetsInSuperview:(id)arg1 {
+    UIEdgeInsets orig = %orig;
+    self.little12safeAreaSuperview = orig;
+    return %orig;
+}
+- (UIEdgeInsets)safeAreaInsets {
+    UIEdgeInsets orig = %orig;
+    if (orig.top == 38 && (statusBarStyle == 2 || self.little12safeAreaSuperview.top == 0))
+        orig.top = 0;
+
+    orig.bottom = wantsbottomInset ? 20 : 0;
+    orig.left = 0;
+    orig.right = 0;
+    return orig;
+}
+%end
+
+%group InstagramFix
+%hook IGStoryStickerContainerView
+- (void)setFrame:(CGRect)frame {
+   %orig(CGRectMake(frame.origin.x,frame.origin.y,frame.size.width,frame.size.height - 40));
+}
+%end
+%end
+
+%group bottominsetfix // AWE = TikTok, TFN = Twitter, YT = Youtube
+%hook AWETabBar
+- (void)setFrame:(CGRect)frame {
+    %orig(CGRectSetY(frame, frame.origin.y + 40));
+}
+%end
+
+%hook AWEFeedTableView
+- (void)setFrame:(CGRect)frame {
+	%orig(CGRectMake(frame.origin.x,frame.origin.y,frame.size.width,frame.size.height + 40));
+}
+%end
+
+%hook TFNNavigationBarOverlayView  
+- (void)setFrame:(CGRect)frame {
+    %orig(CGRectMake(frame.origin.x,frame.origin.y,frame.size.width,frame.size.height + 6));
+}
+%end
+
+%hook T1FleetLineView
+- (void)setFrame:(CGRect)frame {
+    %orig(CGRectSetY(frame, frame.origin.y - 30));
+}
+%end
+
+%hook T1SuggestsModuleHeaderView
+- (void)setFrame:(CGRect)frame {
+   %orig(CGRectSetY(frame, frame.origin.y - 22));
+}
+%end
+
+%hook YTPivotBarView
+- (void)setFrame:(CGRect)frame {
+    %orig(CGRectSetY(frame, frame.origin.y - 40));
+}
+%end
+%hook YTAppView
+- (void)setFrame:(CGRect)frame {
+    %orig(CGRectMake(frame.origin.x,frame.origin.y,frame.size.width,frame.size.height + 40));
+}
+%end
+
+%hook YTNGWatchLayerView
+-(CGRect)miniBarFrame {
+    CGRect const frame = %orig;
+	return CGRectSetY(frame, frame.origin.y - 40);
+}
+%end
+%end
+
+%group YoutubeStatusBarXSpacingFix
+%hook YTHeaderContentComboView
+- (void)setFrame:(CGRect)frame {
+    %orig(CGRectSetY(frame, frame.origin.y - 20));
+}
+%end
+%end
+
+// Preferences.
+void loadPrefs() {
+     @autoreleasepool {
+        
+        NSDictionary const *prefs = [[NSDictionary alloc] initWithContentsOfFile:@"/var/mobile/Library/Preferences/com.ryannair05.little12.plist"];
+
+        if (prefs) {
+            enabled = [[prefs objectForKey:@"enabled"] boolValue];
+            statusBarStyle = [[prefs objectForKey:@"statusBarStyle"] integerValue];
+            wantsGesturesDisabledWhenKeyboard = [[prefs objectForKey:@"noGesturesForKeyboard"] boolValue];
+            wants11Camera = [[prefs objectForKey:@"11Camera"] boolValue];
+            keyboardSpacing = [[prefs objectForKey:@"keyboardSpacing"]?:@45 integerValue];
+            wantsiPadMultitasking = [[prefs objectForKey:@"iPadDock"] boolValue] ? [[prefs objectForKey:@"iPadMultitasking"] boolValue] : NO;
+            
+            NSString const *mainIdentifier = [NSBundle mainBundle].bundleIdentifier;
+            NSDictionary const *appSettings = [prefs objectForKey:mainIdentifier];
+    
+            if (appSettings) {
+                wantsKeyboardDock = [appSettings objectForKey:@"keyboardDock"] ? [[appSettings objectForKey:@"keyboardDock"] boolValue] : [[prefs objectForKey:@"keyboardDock"] boolValue];
+                wantsbottomInset = [appSettings objectForKey:@"bottomInset"] ? [[appSettings objectForKey:@"bottomInset"] boolValue] : [[prefs objectForKey:@"bottomInset"] boolValue];
+                wantsDeviceSpoofing = [appSettings objectForKey:@"deviceSpoofing"] ? [[appSettings objectForKey:@"deviceSpoofing"] boolValue] : [[prefs objectForKey:@"deviceSpoofing"] boolValue];
+                wantsCompatabilityMode = [appSettings objectForKey:@"compatabilityMode"] ? [[appSettings objectForKey:@"compatabilityMode"] boolValue] : [[prefs objectForKey:@"compatabilityMode"] boolValue];
+            } else {
+                wantsKeyboardDock =  [[prefs objectForKey:@"keyboardDock"] boolValue];
+                wantsbottomInset = [[prefs objectForKey:@"bottomInset"] boolValue];
+                wantsDeviceSpoofing = [[prefs objectForKey:@"deviceSpoofing"] boolValue];
+                wantsCompatabilityMode = [[prefs objectForKey:@"compatabilityMode"] boolValue];
+            }
+        }
+    }
+}
+
+%ctor {
+    @autoreleasepool {
+
+        CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)loadPrefs, CFSTR("com.ryannair05.little12prefs/prefsupdated"), NULL, CFNotificationSuspensionBehaviorCoalesce);
+        loadPrefs();
+        
+        if (enabled) {
+
+            bool const isApp = [[[[NSProcessInfo processInfo] arguments] objectAtIndex:0] containsString:@"/Application"];
+
+            if (wantsiPadMultitasking) %init(UIKitiPadMultitasking);
+
+            if (isApp) {
+
+                CFStringRef const bundleIdentifier =  CFBundleGetIdentifier(CFBundleGetMainBundle());
+                    
+                if (CFStringHasPrefix(bundleIdentifier, CFSTR("com.apple"))) {
+                    if (CFEqual(bundleIdentifier, CFSTR("com.apple.camera"))) {
+                        if (wants11Camera) %init(iPhone11Cam);
+                        else if (wantsbottomInset) %init(CameraFix);
+                    }
+                }
+                else if (wantsbottomInset || statusBarStyle > 1) {
+                    
+                    if (CFEqual(bundleIdentifier, CFSTR("com.google.ios.youtube"))) {
+                        if (wantsbottomInset || statusBarStyle == 2)
+                            wantsCompatabilityMode = YES;
+                        else
+                            %init(YoutubeStatusBarXSpacingFix);
+                    }
+                    else if (CFEqual(bundleIdentifier, CFSTR("com.burbn.instagram"))) {
+                        wantsCompatabilityMode = NO;
+                        wantsDeviceSpoofing = statusBarStyle == 2;
+                        %init(InstagramFix)
+                    }
+                    else if (CFEqual(bundleIdentifier, CFSTR("com.zhiliaoapp.musically"))) {
+                        wantsCompatabilityMode = NO;
+                        wantsDeviceSpoofing = YES;
+                        statusBarStyle = 2;
+                    }
+
+                    if (statusBarStyle == 2) {
+                        %init(StatusBarX);
+                        if (!wantsbottomInset)
+                            %init(bottominsetfix);
+                    }
+
+                    if (wantsCompatabilityMode) %init(CompatabilityMode);
+                    if (wantsDeviceSpoofing) {
+
+                        if (access("/usr/lib/libhooker.dylib", F_OK) == 0) {
+                            const struct LHFunctionHook hook[3] = {
+                                {(void *)sysctl, (void *)&_function_sysctl, (void **)&_orig_sysctl},
+                                {(void *)sysctlbyname, (void *)&_function_sysctlbyname, (void **)&_orig_sysctlbyname},
+                                {(void *)uname, (void *)&_function_uname, (void **)&_orig_uname}
+                            };
+
+                            LHHookFunctions(hook, 3);
+                        }
+                        else {
+                            MSHookFunction((void *)sysctl, (void *)&_function_sysctl, (void **)&_orig_sysctl);
+                            MSHookFunction((void *)sysctlbyname, (void *)&_function_sysctlbyname, (void **)&_orig_sysctlbyname);
+                            MSHookFunction((void *)uname, (void *)&_function_uname, (void **)&_orig_uname);
+                        }
+                    }
+                }
+            }
+
+            if (access("/Library/MobileSubstrate/DynamicLibraries/KeyboardPlus.dylib", F_OK) != 0) {
+
+                if (wantsKeyboardDock) %init(KeyboardDock);
+                else %init(ForceDefaultKeyboard);
+
+                if (wantsGesturesDisabledWhenKeyboard) {
+                    [[NSNotificationCenter defaultCenter] addObserverForName:UIKeyboardDidShowNotification object:nil queue:nil usingBlock:^(NSNotification *n){
+                            disableGestures = true;
+                        }];
+                    [[NSNotificationCenter defaultCenter] addObserverForName:UIKeyboardWillHideNotification object:nil queue:nil usingBlock:^(NSNotification *n){
+                            disableGestures = false;
+                        }];
+                        %init(disableGesturesWhenKeyboard);
+                }
+            }
+
+            %init;
+        }
+    }
+}
