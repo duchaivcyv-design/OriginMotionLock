@@ -1,6 +1,7 @@
 #import <Preferences/PSListController.h>
 #import <Preferences/PSSpecifier.h>
 #import <UIKit/UIKit.h>
+#import <objc/runtime.h> // Khai báo thêm thư viện này để sửa lỗi objc_getClass
 
 @interface OriginMotionLockPrefsListController : PSListController
 @end
@@ -27,6 +28,7 @@
                                                                      edit:Nil];
             [specifier setProperty:@"com.yourname.originmotionlock" forKey:@"defaults"];
             [specifier setProperty:[NSString stringWithFormat:@"customParamKey%d", i] forKey:@"key"];
+            [mutableSpecifiers addObject:specifier];
         }
         
         _specifiers = [mutableSpecifiers copy];
@@ -48,27 +50,11 @@
     }
     [settings setObject:value forKey:specifier.properties[@"key"]];
     [settings writeToFile:path atomically:YES];
-    
-    NSString *notificationStr = [specifier propertyForKey:@"PostNotification"];
-    if (notificationStr) {
-        CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (__bridge CFStringRef)notificationStr, NULL, NULL, YES);
-    }
 }
 
 - (void)viewDidLoad {
-    [super.viewDidLoad];
+    [super viewDidLoad]; // Sửa lại cú pháp gọi super chuẩn xác
     [self.navigationItem setTitle:@"OriginMotionLock Pro"];
-    
-    UIBarButtonItem *applyButton = [[UIBarButtonItem alloc] initWithTitle:@"Lưu lại"
-                                                                    style:UIBarButtonItemStyleDone
-                                                                   target:self
-                                                                   action:@selector(reloadSpecifiers)];
-    self.navigationItem.rightBarButtonItem = applyButton;
-}
-
-- (void)viewWillAppear:(BOOL)animated {
-    [super viewWillAppear:animated];
-    [self reloadSpecifiers];
 }
 
 @end
