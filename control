@@ -1,9 +1,9 @@
 Package: com.yourname.originmotionlock
 Name: OriginMotionLock
-Depends: mobilesubstrate, firmware (>= 14.0)
+Author: duchaivcyv <your-email@gmail.com>
+Description: Hiệu ứng nghiêng máy dịch chuyển ảnh nền 3D cho màn hình khóa iOS.
+Architecture: arm64
 Version: 1.0.0
-Architecture: iphoneos-arm64
-Description: Tweak hieu ung nghieng may.
-Maintainer: YourName
-Author: YourName
+Maintainer: duchaivcyv <your-email@gmail.com>
+Depends: mobilesubstrate, firmware (>= 14.0), preferenceloader
 Section: Tweaks
