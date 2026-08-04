@@ -11,7 +11,6 @@ ARCHS = arm64
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 
-# Sửa thành += chuẩn cú pháp Theos:
 SUBPROJECTS += originmotionlockprefs
 
 include $(THEOS_MAKE_PATH)/aggregate.mk
