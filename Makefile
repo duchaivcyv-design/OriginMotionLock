@@ -11,4 +11,12 @@ OriginMotionLock_FRAMEWORKS = UIKit Foundation CoreMotion QuartzCore
 OriginMotionLock_ARCHS = arm64
 OriginMotionLock_PLIST = OriginMotionLock.plist
 
+# THÊM ĐOẠN NÀY VÀO CUỐI MAKEFILE ĐỂ BIÊN DỊCH PHẦN CÀI ĐẶT
+BUNDLE_NAME = OriginMotionLockPrefs
+OriginMotionLockPrefs_FILES = OriginMotionLockPrefsListController.m
+OriginMotionLockPrefs_INSTALL_PATH = /Library/PreferenceBundles
+OriginMotionLockPrefs_FRAMEWORKS = UIKit
+OriginMotionLockPrefs_PRIVATE_FRAMEWORKS = Preferences
+
 include $(THEOS_MAKE_PATH)/tweak.mk
+include $(THEOS_MAKE_PATH)/bundle.mk
