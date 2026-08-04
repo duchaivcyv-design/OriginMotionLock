@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>items</key>
+    <array>
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+            <key>label</key>
+            <string>OriginMotionLock - Cài Đặt Hiệu Ứng</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <true/>
+            <key>defaults</key>
+            <string>com.yourname.originmotionlock</string>
+            <key>key</key>
+            <string>isEnabled</string>
+            <key>label</key>
+            <string>Bật Tweak</string>
+        </dict>
+
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+            <key>label</key>
+            <string>Tùy Chọn Chuyển Động Cảm Biến</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <true/>
+            <key>defaults</key>
+            <string>com.yourname.originmotionlock</string>
+            <key>key</key>
+            <string>enableParallax</string>
+            <key>label</key>
+            <string>Hiệu ứng Parallax (Chiều sâu)</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <false/>
+            <key>defaults</key>
+            <string>com.yourname.originmotionlock</string>
+            <key>key</key>
+            <string>invertX</string>
+            <key>label</key>
+            <string>Đảo ngược chiều Ngang (X)</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <false/>
+            <key>defaults</key>
+            <string>com.yourname.originmotionlock</string>
+            <key>key</key>
+            <string>invertY</string>
+            <key>label</key>
+            <string>Đảo ngược chiều Dọc (Y)</string>
+        </dict>
+
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+            <key>label</key>
+            <string>Hệ Thống &amp; Tiết Kiệm Pin</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <true/>
+            <key>defaults</key>
+            <string>com.yourname.originmotionlock</string>
+            <key>key</key>
+            <string>lowPowerModeOptimize</string>
+            <key>label</key>
+            <string>Tự tắt khi bật Tiết kiệm pin</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <true/>
+            <key>defaults</key>
+            <string>com.yourname.originmotionlock</string>
+            <key>key</key>
+            <string>useCoreMotion</string>
+            <key>label</key>
+            <string>Sử dụng CoreMotion mượt mà</string>
+        </dict>
+
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+            <key>footerText</key>
+            <string>© 2026 OriginMotionLock - All Rights Reserved</string>
+        </dict>
+    </array>
+    <key>title</key>
+    <string>OriginMotionLock</string>
+</dict>
+</plist>ẻ
