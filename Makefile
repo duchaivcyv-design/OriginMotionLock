@@ -12,5 +12,3 @@ OriginMotionLock_FRAMEWORKS = UIKit Foundation CoreMotion QuartzCore
 OriginMotionLock_ARCHS = arm64
 
 include $(THEOS_MAKE_PATH)/tweak.mk
-SUBPROJECTS += preference
-include $(THEOS_MAKE_PATH)/aggregate.mk
