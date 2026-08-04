@@ -22,13 +22,12 @@ static CGFloat rotationAngle = 0.0;
 @interface CSCoverSheetViewController : UIViewController
 @property (nonatomic, retain) UIView *originMotionBackgroundView;
 @property (nonatomic, retain) CMMotionManager *motionManager;
-- (void)originMotion_reloadPreferences;
 - (void)originMotion_startMotionUpdates;
 - (void)originMotion_stopMotionUpdates;
 @end
 
 // Hàm đọc file cấu hình Plist an toàn
-static void loadPreferences() {
+static void loadPreferences(void) {
     @autoreleasepool {
         NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:PLIST_PATH];
         if (prefs) {
