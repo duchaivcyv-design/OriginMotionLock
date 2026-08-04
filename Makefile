@@ -11,7 +11,7 @@ OriginMotionLock_FRAMEWORKS = UIKit Foundation CoreMotion QuartzCore
 OriginMotionLock_ARCHS = arm64
 OriginMotionLock_PLIST = OriginMotionLock.plist
 
-# Cấu hình cho phần Cài đặt (PreferenceBundle) - Sửa chuẩn arm64 và private framework
+# Cấu hình cho Preference Bundle (Phần Cài đặt)
 BUNDLE_NAME = OriginMotionLockPrefs
 OriginMotionLockPrefs_FILES = OriginMotionLockPrefsListController.m
 OriginMotionLockPrefs_INSTALL_PATH = /Library/PreferenceBundles
