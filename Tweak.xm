@@ -31,6 +31,7 @@ static BOOL getPrefBool(NSString *key, BOOL defaultVal) {
 
 %hook CSCoverSheetViewController
 
+// %property ĐÃ ĐƯỢC ĐẶT ĐÚNG VỊ TRÍ BÊN TRONG %hook ĐỂ KHÔNG BỊ LỖI BIÊN DỊCH
 %property (nonatomic, retain) UIView *originMotionBackgroundView;
 %property (nonatomic, retain) CMMotionManager *motionManager;
 
