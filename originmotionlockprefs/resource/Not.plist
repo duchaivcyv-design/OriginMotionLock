@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>items</key>
+    <array>
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+            <key>label</key>
+            <string>Tùy Chọn Nâng Cao Khác</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <false/>
+            <key>defaults</key>
+            <string>com.yourname.originmotionlock</string>
+            <key>key</key>
+            <string>pauseWhenMediaPlaying</string>
+            <key>label</key>
+            <string>Tạm dừng khi đang phát nhạc</string>
+        </dict>
+    </array>
+    <key>title</key>
+    <string>Tùy Chọn Khác</string>
+</dict>
+</plist>
