@@ -1,5 +1,6 @@
 FINALPACKAGE = 1
-export TARGET = iphone:clang
+export TARGET = iphone:clang:14.0:14.0
+export ARCHS = arm64
 export ADDITIONAL_CFLAGS = -DTHEOS_LEAN_AND_MEAN -fobjc-arc
 
 include $(THEOS)/makefiles/common.mk
@@ -7,7 +8,6 @@ include $(THEOS)/makefiles/common.mk
 TWEAK_NAME = OriginMotionLock
 OriginMotionLock_FILES = Tweak.xm
 OriginMotionLock_FRAMEWORKS = UIKit Foundation CoreMotion QuartzCore
-ARCHS = arm64
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 
