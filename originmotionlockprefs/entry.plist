@@ -4,11 +4,18 @@
 <dict>
     <key>entry</key>
     <dict>
-        <bundle>OriginMotionLockPrefs</bundle>
-        <cell>PSSwitchCell</cell>
-        <details>OriginMotionLockPrefsListController</details>
-        <icon>icon.png</icon>
-        <label>OriginMotionLock</label>
+        <key>bundle</key>
+        <string>OriginMotionLockPrefs</string>
+        <key>cell</key>
+        <string>PSLinkCell</string>
+        <key>detail</key>
+        <string>OriginMotionLockPrefsListController</string>
+        <key>icon</key>
+        <string>icon.png</string>
+        <key>isController</key>
+        <true/>
+        <key>label</key>
+        <string>OriginMotionLock</string>
     </dict>
 </dict>
 </plist>
