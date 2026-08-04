@@ -4,12 +4,12 @@
 <dict>
     <key>items</key>
     <array>
-        <!-- Nhóm 1: Trạng thái cơ bản -->
+        <!-- Nhóm 1: Trạng thái cốt lõi -->
         <dict>
             <key>cell</key>
             <string>PSGroupCell</string>
             <key>label</key>
-            <string>1. Trạng thái cốt lõi</string>
+            <string>Trạng thái cốt lõi</string>
         </dict>
         <dict>
             <key>cell</key>
@@ -77,7 +77,7 @@
             <key>cell</key>
             <string>PSGroupCell</string>
             <key>label</key>
-            <string>2. Truy cập danh mục chuyên sâu</string>
+            <string>Danh mục chuyên sâu</string>
         </dict>
         <dict>
             <key>cell</key>
@@ -116,12 +116,12 @@
             <string>Not</string>
         </dict>
 
-        <!-- Nhóm 3: Các cài đặt bổ sung trên trang chủ (đủ 20 key tổng) -->
+        <!-- Nhóm 3: Các cài đặt bổ sung trên trang chủ -->
         <dict>
             <key>cell</key>
             <string>PSGroupCell</string>
             <key>label</key>
-            <string>3. Quản lý bộ nhớ & hệ thống</string>
+            <string>Quản lý bộ nhớ & hệ thống</string>
         </dict>
         <dict>
             <key>cell</key>
@@ -247,7 +247,7 @@
             <key>cell</key>
             <string>PSGroupCell</string>
             <key>footerText</key>
-            <string>OriginMotionLock - Hệ thống 20+ key hoàn chỉnh.</string>
+            <string>OriginMotionLock - Được thiết kế tối ưu hóa cho màn hình khóa.</string>
         </dict>
     </array>
     <key>title</key>
