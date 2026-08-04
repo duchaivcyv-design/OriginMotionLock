@@ -3,9 +3,9 @@ include $(THEOS)/makefiles/common.mk
 
 BUNDLE_NAME = OriginMotionLockPrefs
 
-OriginMotionLockPrefs_FILES = OriginMotionLockRootListController.m OriginMotionLockAppSettingsController.m OrderedDictionary.m
+OriginMotionLockPrefs_FILES = OriginMotionLockPrefsListController.m
 OriginMotionLockPrefs_INSTALL_PATH = /Library/PreferenceBundles
-OriginMotionLockPrefs_PRIVATE_FRAMEWORKS = Preferences SpringBoardServices OnBoardingKit
+OriginMotionLockPrefs_PRIVATE_FRAMEWORKS = Preferences
 OriginMotionLockPrefs_CFLAGS = -fobjc-arc
 OriginMotionLockPrefs_ARCHS = arm64 arm64e
 
