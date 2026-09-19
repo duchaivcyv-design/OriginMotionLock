@@ -7,8 +7,7 @@
 		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
-			<key>label</key>
-			<string>Cài đặt chung Bypass</string>
+			<label>Cài đặt chung</label>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -20,10 +19,40 @@
 			<key>key</key>
 			<string>isEnabled</string>
 			<key>label</key>
-			<string>Bật Bypass</string>
+			<string>Bật/Tắt Toàn Hệ Thống</string>
+		</dict>
+		
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<label>Tùy chỉnh ứng dụng cần ẩn (Per-App)</label>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true/>
+			<key>defaults</key>
+			<string>com.onyx.mbbypass</string>
+			<key>key</key>
+			<string>enabled_com.mbbank.mbmobile</string>
+			<key>label</key>
+			<string>MB Bank</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true/>
+			<key>defaults</key>
+			<string>com.onyx.mbbypass</string>
+			<key>key</key>
+			<string>enabled_com.lemon.lvoverseas</string>
+			<key>label</key>
+			<string>CapCut</string>
 		</dict>
 	</array>
 	<key>title</key>
-	<string>MBBypass</string>
+	<string>MBBypass Settings</string>
 </dict>
 </plist>
