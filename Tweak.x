@@ -4,7 +4,7 @@
 #import <sys/stat.h>
 #import <sys/sysctl.h>
 
-// Khai báo hàm C API nguyên thủy để hook trực tiếp thời gian thực
+// Khai báo hàm C API nguyên thủy
 extern int stat(const char *path, struct stat *buf);
 extern int lstat(const char *path, struct stat *buf);
 extern int access(const char *path, int amode);
@@ -12,20 +12,16 @@ extern FILE *fopen(const char *filename, const char *mode);
 
 // Hàm kiểm tra trạng thái bật/tắt kết nối trực tiếp với plist và NSUserDefaults
 BOOL isBypassEnabledForCurrentApp(void) {
-    // Đọc trực tiếp qua file plist cấu hình chuẩn
     NSString *path = @"/var/mobile/Library/Preferences/com.onyx.mbbypass.plist";
     NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:path];
     
-    // Nếu không đọc được trực tiếp qua đường dẫn, fallback qua NSUserDefaults
     if (!dict) {
         NSUserDefaults *defaults = [[NSUserDefaults alloc] initWithSuiteName:@"com.onyx.mbbypass"];
         dict = [defaults dictionaryRepresentation];
     }
     
-    // Nếu vẫn không có dữ liệu, mặc định cho phép bypass hoạt động để kiểm tra
     if (!dict) return YES;
     
-    // Kiểm tra công tắc tổng
     NSNumber *isGlobalEnabled = [dict objectForKey:@"isEnabled"];
     if (isGlobalEnabled && ![isGlobalEnabled boolValue]) {
         return NO;
@@ -37,11 +33,10 @@ BOOL isBypassEnabledForCurrentApp(void) {
     NSString *appKey = [NSString stringWithFormat:@"enabled_%@", bundleID];
     NSNumber *appEnabled = [dict objectForKey:appKey];
     
-    // Nếu chưa gạt nút riêng cho app đó, mặc định trả về YES để bảo vệ app khi vừa cài đặt
     return appEnabled ? [appEnabled boolValue] : YES;
 }
 
-// Danh sách các từ khóa và đường dẫn nhạy cảm cần ẩn trong thời gian thực
+// Danh sách từ khóa và đường dẫn jailbreak/hooking cần che giấu
 BOOL shouldHidePath(NSString *pathString) {
     if (!pathString) return NO;
     NSString *lowerPath = [pathString lowercaseString];
@@ -50,7 +45,8 @@ BOOL shouldHidePath(NSString *pathString) {
         @"cydia", @"sileo", @"zebra", @"bulky", @"filza", @"openssh", 
         @"dropbear", @"substrate", @"substitute", @"libhooker", @"checkra1n", 
         @"palera1n", @"dopamine", @"rootless", @"jb", @"apt", @"dpkg", 
-        @"tweaks", @"sbsettings", @"winterboard", @"ellekit"
+        @"tweaks", @"sbsettings", @"winterboard", @"ellekit", @"frida", 
+        @"cycript", @"hopper", @"ghidra", @"lldb"
     ];
     
     for (NSString *keyword in restrictedKeywords) {
@@ -59,7 +55,6 @@ BOOL shouldHidePath(NSString *pathString) {
         }
     }
     
-    // Các đường dẫn hệ thống jailbreak cụ thể
     NSArray *restrictedPaths = @[
         @"/Applications/Cydia.app",
         @"/Applications/Sileo.app",
@@ -85,12 +80,12 @@ BOOL shouldHidePath(NSString *pathString) {
 }
 
 // --------------------------------------------------------------------------
-// HỆ THỐNG HOOK NÂNG CAO (RUNTIME & ANTI-DEBUG HOOKS)
+// HỆ THỐNG HOOK NÂNG CAO (CHỐNG MÃ LỖI 3 & 5)
 // --------------------------------------------------------------------------
 
 %group MBBypassAdvancedHooks
 
-// 1. Hook NSFileManager (Bảo vệ các thao tác quét file/thư mục của Obj-C)
+// 1. Hook NSFileManager
 %hook NSFileManager
 
 - (BOOL)fileExistsAtPath:(NSString *)path {
@@ -110,19 +105,19 @@ BOOL shouldHidePath(NSString *pathString) {
 - (NSArray *)contentsOfDirectoryAtPath:(NSString *)path error:(NSError **)error {
     NSArray *result = %orig(path, error);
     if (isBypassEnabledForCurrentApp() && shouldHidePath(path)) {
-        return @[]; // Trả về mảng rỗng để che giấu nội dung bên trong thư mục jb
+        return @[];
     }
     return result;
 }
 
 %end
 
-// 2. Hook C-API trực tiếp (Bắt trúng các hàm kiểm tra nền tảng cấp thấp stat, access, fopen)
+// 2. Hook C-API (stat, lstat, access, fopen)
 %hookf(int, stat, const char *path, struct stat *buf) {
     if (isBypassEnabledForCurrentApp() && path) {
         NSString *pathStr = [NSString stringWithUTF8String:path];
         if (shouldHidePath(pathStr)) {
-            errno = ENOENT; // Trả về mã lỗi "No such file or directory"
+            errno = ENOENT;
             return -1;
         }
     }
@@ -155,13 +150,13 @@ BOOL shouldHidePath(NSString *pathString) {
     if (isBypassEnabledForCurrentApp() && filename) {
         NSString *pathStr = [NSString stringWithUTF8String:filename];
         if (shouldHidePath(pathStr)) {
-            return NULL; // Trả về NULL nếu app cố mở file jailbreak
+            return NULL;
         }
     }
     return %orig;
 }
 
-// 3. Hook sysctl để ngăn app dò tìm tiến trình lạ hoặc trạng thái debug
+// 3. Hook sysctl ngăn dò tìm tiến trình debug / gỡ rối
 %hookf(int, sysctl, int *mib, u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen) {
     if (isBypassEnabledForCurrentApp() && mib && namelen >= 2) {
         if (mib[0] == CTL_KERN && mib[1] == KERN_PROC) {
@@ -176,7 +171,7 @@ BOOL shouldHidePath(NSString *pathString) {
     return %orig(mib, namelen, oldp, oldlenp, newp, newlen);
 }
 
-// 4. Hook UIApplication để chặn các URL Scheme nhạy cảm (cydia://, sileo://,...)
+// 4. Chặn URL Scheme nhạy cảm
 %hook UIApplication
 
 - (BOOL)canOpenURL:(NSURL *)url {
@@ -195,7 +190,7 @@ BOOL shouldHidePath(NSString *pathString) {
 
 %end
 
-// 5. Hook NSProcessInfo để che giấu các biến môi trường và thông tin debug
+// 5. Hook NSProcessInfo xử lý môi trường thực thi và biến môi trường
 %hook NSProcessInfo
 
 - (BOOL)isDebuggingEnabled {
@@ -233,13 +228,12 @@ BOOL shouldHidePath(NSString *pathString) {
 
 %end
 
-%end // End of group
-
-// Khởi tạo tiến trình
+// 6. Bổ sung hook chuyên sâu chống quét phát hiện Hooking (Mã lỗi 3)
 %ctor {
     @autoreleasepool {
         NSString *processName = [[NSProcessInfo processInfo] processName];
         if (![processName isEqualToString:@"SpringBoard"] && ![processName isEqualToString:@"Preferences"]) {
+            // Chạy nhóm hook nâng cao
             %init(MBBypassAdvancedHooks);
         }
     }
