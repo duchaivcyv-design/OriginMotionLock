@@ -1,43 +1,108 @@
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
+#import <Cephei/HBPreferences.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
-// 1. Hook NSFileManager để ẩn các đường dẫn/file đặc trưng của Jailbreak
-%hook NSFileManager
+static BOOL isEnabled = YES;
 
-- (BOOL)fileExistsAtPath:(NSString *)path {
-    // Danh sách các file/thư mục jailbreak thường bị ứng dụng quét
+// Hàm kiểm tra và lọc các đường dẫn nhạy cảm của Jailbreak
+static BOOL shouldHidePath(NSString *path) {
+    if (!isEnabled || !path) return NO;
+    
     NSArray *restrictedPaths = @[
         @"/Applications/Cydia.app",
         @"/Applications/Sileo.app",
         @"/Applications/Zebra.app",
+        @"/Applications/Filza.app",
         @"/usr/sbin/sshd",
         @"/bin/bash",
+        @"/bin/sh",
         @"/etc/apt",
+        @"/etc/ssh",
         @"/Library/MobileSubstrate/MobileSubstrate.dylib",
-        @"/var/jb"
+        @"/Library/TweakInject",
+        @"/var/jb",
+        @"/var/lib/apt",
+        @"/var/log/apt",
+        @"/usr/libexec/ssh-keysign",
+        @/usr/bin/ssh
     ];
     
-    for (NSString *restrictedPath in restrictedPaths) {
-        if ([path isEqualToString:restrictedPath]) {
-            return NO; // Trả về NO để đánh lừa ứng dụng rằng không tìm thấy
+    for (NSString *restricted in restrictedPaths) {
+        if ([path isEqualToString:restricted] || [path hasPrefix:[restricted stringByAppendingString:@"/"]]) {
+            return YES;
         }
     }
-    
+    return NO;
+}
+
+// 1. Hook NSFileManager để chặn quét file/thư mục
+%hook NSFileManager
+
+- (BOOL)fileExistsAtPath:(NSString *)path {
+    if (shouldHidePath(path)) return NO;
     return %orig(path);
+}
+
+- (BOOL)fileExistsAtPath:(NSString *)path isDirectory:(BOOL *)isDirectory {
+    if (shouldHidePath(path)) return NO;
+    return %orig(path, isDirectory);
+}
+
+- (NSDictionary *)attributesOfItemAtPath:(NSString *)path error:(NSError **)error {
+    if (shouldHidePath(path)) return nil;
+    return %orig(path, error);
 }
 
 %end
 
-// 2. Hook UIApplication để chặn ứng dụng phát hiện các gói quản lý thông qua URL Scheme
+// 2. Hook các hàm hệ thống C (C-functions) cấp thấp chống lách luật qua stat/access
+%hookf(int, access, const char *path, int amode) {
+    if (path) {
+        NSString *pathStr = [NSString stringWithUTF8String:path];
+        if (shouldHidePath(pathStr)) {
+            errno = ENOENT;
+            return -1;
+        }
+    }
+    return %orig(path, amode);
+}
+
+%hookf(int, stat, const char *path, struct stat *buf) {
+    if (path) {
+        NSString *pathStr = [NSString stringWithUTF8String:path];
+        if (shouldHidePath(pathStr)) {
+            errno = ENOENT;
+            return -1;
+        }
+    }
+    return %orig(path, stat);
+}
+
+%hookf(int, lstat, const char *path, struct stat *buf) {
+    if (path) {
+        NSString *pathStr = [NSString stringWithUTF8String:path];
+        if (shouldHidePath(pathStr)) {
+            errno = ENOENT;
+            return -1;
+        }
+    }
+    return %orig(path, lstat);
+}
+
+// 3. Hook UIApplication để chặn mở URL Scheme của các chợ ứng dụng JB
 %hook UIApplication
 
 - (BOOL)canOpenURL:(NSURL *)url {
-    NSString *urlString = [[url absoluteString] lowercaseString];
+    if (!isEnabled) return %orig(url);
     
+    NSString *urlString = [[url absoluteString] lowercaseString];
     if ([urlString hasPrefix:@"cydia://"] ||
         [urlString hasPrefix:@"sileo://"] ||
         [urlString hasPrefix:@"zbra://"] ||
-        [urlString hasPrefix:@"filza://"]) {
+        [urlString hasPrefix:@"filza://"] ||
+        [urlString hasPrefix:@"activator://"]) {
         return NO;
     }
     
@@ -46,9 +111,12 @@
 
 %end
 
-// 3. Khởi tạo constructor khi tweak được nạp vào bộ nhớ ứng dụng
+// Khởi tạo lấy trạng thái từ Cephei Preferences
 %ctor {
     @autoreleasepool {
-        NSLog(@"[MBBypass] Tweak successfully loaded into process: %@", [[NSProcessInfo processInfo] processName]);
+        HBPreferences *preferences = [[HBPreferences alloc] initWithIdentifier:@"com.onyx.mbbypass"];
+        [preferences registerBool:&isEnabled default:YES forKey:@"isEnabled"];
+        
+        NSLog(@"[MBBypass] Advanced Core Loaded. Status: %d", isEnabled);
     }
 }
