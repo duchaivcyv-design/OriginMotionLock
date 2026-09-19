@@ -2,18 +2,77 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <!-- Công tắc tổng kích hoạt cơ chế ẩn sandbox -->
     <key>isEnabled</key>
     <true/>
-    
-    <!-- Cấu hình nâng cao: Buộc ẩn tiến trình con và chống gỡ rối -->
     <key>hideChildProcesses</key>
     <true/>
-    
-    <!-- Cấu hình bật/tắt riêng cho từng ứng dụng ngân hàng cụ thể -->
+    <key>enabled_com.vietcombank.mobilebanking</key>
+    <true/>
     <key>enabled_vn.com.techcombank.mb.consumer</key>
     <true/>
-    <key>enabled_com.vietcombank.mobilebanking</key>
+    <key>enabled_com.bidv.SmartBanking</key>
+    <true/>
+    <key>enabled_com.vietinbank.mobile</key>
+    <true/>
+    <key>enabled_com.mbmobile</key>
+    <true/>
+    <key>enabled_com.acb.mobileapp</key>
+    <true/>
+    <key>enabled_com.vpbank.online</key>
+    <true/>
+    <key>enabled_com.tpb.mobilebanking</key>
+    <true/>
+    <key>enabled_com.sacombank.mobilebanking</key>
+    <true/>
+    <key>enabled_com.vnpay.agribank</key>
+    <true/>
+    <key>enabled_com.hdbank.mbanking</key>
+    <true/>
+    <key>enabled_com.msb.mPass</key>
+    <true/>
+    <key>enabled_vn.com.vib.mobile</key>
+    <true/>
+    <key>enabled_com.shb.smart</key>
+    <true/>
+    <key>enabled_com.eximbank.mobilebanking</key>
+    <true/>
+    <key>enabled_com.seabank.seanet</key>
+    <true/>
+    <key>enabled_vn.com.ocb.omni</key>
+    <true/>
+    <key>enabled_com.lpbank.mobile</key>
+    <true/>
+    <key>enabled_com.baoviet.smart</key>
+    <true/>
+    <key>enabled_com.namabank.mobile</key>
+    <true/>
+    <key>enabled_com.vng.zalopay</key>
+    <true/>
+    <key>enabled_com.momo.payment</key>
+    <true/>
+    <key>enabled_vn.com.vnpay.pay</key>
+    <true/>
+    <key>enabled_com.viettel.viettelpay</key>
+    <true/>
+    <key>enabled_airpay.phone.app</key>
+    <true/>
+    <key>enabled_com.mico.safetynet</key>
+    <true/>
+    <key>enabled_com.dts.freefireth</key>
+    <true/>
+    <key>enabled_eu.explusalpha.Snes9xEX</key>
+    <true/>
+    <key>enabled_com.tencent.ig</key>
+    <true/>
+    <key>enabled_com.vng.pubgmobile</key>
+    <true/>
+    <key>enabled_com.riotgames.leagueoflegends.wildrift.vn</key>
+    <true/>
+    <key>enabled_com.HoYoverse.GenshinImpact</key>
+    <true/>
+    <key>enabled_com.HoYoverse.StarRail</key>
+    <true/>
+    <key>enabled_com.netease.lztgglobal</key>
     <true/>
 </dict>
 </plist>
