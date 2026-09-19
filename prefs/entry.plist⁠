@@ -2,11 +2,22 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>items</key>
-	<array>
-		<!-- Danh sách sẽ được load tự động từ MBBypassRootListController.m -->
-	</array>
-	<key>title</key>
-	<string>MBBypass</string>
+	<key>entry</key>
+	<dict>
+		<key>cell</key>
+		<string>PSLinkCell</string>
+		<key>icon</key>
+		<string>MBBypass.png</string>
+		<key>label</key>
+		<string>MBBypass</string>
+		<key>bundle</key>
+		<string>prefs</string>
+		<key>detail</key>
+		<string>MBBypassRootListController</string>
+		<key>isController</key>
+		<true/>
+		<key>iconPath</key>
+		<string>/Library/PreferenceLoader/Preferences/MBBypass.png</string>
+	</dict>
 </dict>
 </plist>
