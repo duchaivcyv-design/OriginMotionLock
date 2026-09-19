@@ -11,34 +11,50 @@
 
 extern kern_return_t mach_vm_allocate(vm_map_t target, mach_vm_address_t *address, mach_vm_size_t size, int flags);
 
-// Hàm kiểm tra trạng thái độc lập qua CFPreferences (bỏ qua rào cản Sandbox)
+// Hàm kiểm tra trạng thái kèm log chi tiết để debug
 static BOOL shouldBypassCurrentApplicationProcess(void) {
     @autoreleasepool {
         @try {
             NSBundle *mainAppBundle = [NSBundle mainBundle];
             NSString *currentBundleIdentifier = [mainAppBundle bundleIdentifier];
-            if (!currentBundleIdentifier) return NO;
+            if (!currentBundleIdentifier) {
+                NSLog(@"[MBBypass] Không tìm thấy Bundle Identifier của tiến trình này.");
+                return NO;
+            }
+
+            // Bỏ qua SpringBoard hoặc các tiến trình hệ thống không cần thiết
+            if ([currentBundleIdentifier isEqualToString:@"com.apple.springboard"]) {
+                return NO;
+            }
 
             CFStringRef applicationID = CFSTR("com.onyx.mbbypass");
             
+            // Ép buộc đồng bộ dữ liệu cấu hình từ ổ đĩa
+            CFPreferencesAppSynchronize(applicationID);
+
             // 1. Kiểm tra công tắc tổng (isEnabled)
             Boolean keyExistsAndValid = false;
             Boolean masterEnabled = CFPreferencesGetAppBooleanValue(CFSTR("isEnabled"), applicationID, &keyExistsAndValid);
             if (keyExistsAndValid && !masterEnabled) {
+                NSLog(@"[MBBypass] Công tắc tổng đang TẮT cho mọi app.");
                 return NO;
             }
 
-            // 2. Kiểm tra công tắc riêng biệt của từng ứng dụng (enabled_<BundleID>)
+            // 2. Kiểm tra công tắc riêng biệt của ứng dụng hiện tại
             NSString *preferenceKey = [NSString stringWithFormat:@"enabled_%@", currentBundleIdentifier];
             CFStringRef prefKeyRef = (__bridge CFStringRef)preferenceKey;
             
             Boolean appSpecificEnabled = CFPreferencesGetAppBooleanValue(prefKeyRef, applicationID, &keyExistsAndValid);
+            
+            NSLog(@"[MBBypass] App: %@ | Trạng thái bật: %d (Tồn tại key: %d)", currentBundleIdentifier, appSpecificEnabled, keyExistsAndValid);
+
             if (keyExistsAndValid && appSpecificEnabled) {
                 return YES;
             }
 
             return NO;
         } @catch (NSException *exception) {
+            NSLog(@"[MBBypass] Lỗi ngoại lệ trong shouldBypass: %@", exception);
             return NO;
         }
     }
@@ -160,11 +176,13 @@ static kern_return_t replaced_mach_vm_allocate(vm_map_t target, mach_vm_address_
 }
 
 // ==============================================================================
-#pragma mark - CONSTRUCTOR KHỞI TẠO (THAY THẾ %ctor)
+#pragma mark - CONSTRUCTOR KHỞI TẠO
 // ==============================================================================
 __attribute__((constructor)) static void custom_ctor(void) {
     @autoreleasepool {
+        NSLog(@"[MBBypass] Constructor được gọi trong tiến trình: %s", getprogname());
         if (shouldBypassCurrentApplicationProcess()) {
+            NSLog(@"[MBBypass] Đã kích hoạt các hook thành công cho tiến trình này!");
             MSHookFunction((void *)sysctl, (void *)replaced_sysctl, (void **)&orig_sysctl);
             MSHookFunction((void *)stat, (void *)replaced_stat, (void **)&orig_stat);
             MSHookFunction((void *)lstat, (void *)replaced_lstat, (void **)&orig_lstat);
@@ -172,6 +190,8 @@ __attribute__((constructor)) static void custom_ctor(void) {
             MSHookFunction((void *)open, (void *)replaced_open, (void **)&orig_open);
             MSHookFunction((void *)vm_allocate, (void *)replaced_vm_allocate, (void **)&orig_vm_allocate);
             MSHookFunction((void *)mach_vm_allocate, (void *)replaced_mach_vm_allocate, (void **)&orig_mach_vm_allocate);
+        } else {
+            NSLog(@"[MBBypass] Bỏ qua hook do không thỏa mãn điều kiện cấu hình.");
         }
     }
 }
