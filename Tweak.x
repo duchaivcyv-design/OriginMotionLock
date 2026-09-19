@@ -120,7 +120,7 @@ static BOOL shouldHidePath(NSString *path) {
             return -1;
         }
     }
-    return %orig(path, lstat, buf);
+    return %orig(path, buf);
 }
 
 %hookf(int, open, const char *path, int oflag, ...) {
@@ -159,7 +159,6 @@ static BOOL shouldHidePath(NSString *path) {
 %hookf(uint32_t, _dyld_image_count) {
     uint32_t count = %orig();
     if (!isCurrentAppBypassActive) return count;
-    // Có thể tinh chỉnh trả về số lượng nguyên bản hoặc giữ nguyên nhưng che giấu tên
     return count;
 }
 
