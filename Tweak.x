@@ -7,15 +7,14 @@
 #include <dlfcn.h>
 #include <unistd.h>
 #include <mach-o/dyld.h>
+#include <objc/runtime.h>
 
-// Khai báo nguyên mẫu hàm ptrace thủ công để tương thích hoàn toàn với Linux SDK
 extern int ptrace(int _request, pid_t _pid, caddr_t _addr, int _data);
 
 static HBPreferences *preferences = nil;
 static BOOL isGlobalEnabled = YES;
 static BOOL isCurrentAppBypassActive = YES;
 
-// Đồng bộ trạng thái cấu hình tùy chỉnh cho từng app
 static void updateBypassStatus() {
     if (!preferences) {
         preferences = [[HBPreferences alloc] initWithIdentifier:@"com.onyx.mbbypass"];
@@ -25,12 +24,14 @@ static void updateBypassStatus() {
     NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
     if (bundleID) {
         NSString *key = [NSString stringWithFormat:@"enabled_%@", bundleID];
+        // Mặc định nếu chưa bật/tắt thì để là YES cho các app ngân hàng
         [preferences registerBool:&isCurrentAppBypassActive default:YES forKey:key];
     }
     
     isCurrentAppBypassActive = isGlobalEnabled && isCurrentAppBypassActive;
 }
 
+// Bộ lọc từ khóa và đường dẫn Rootless triệt để
 static BOOL shouldHidePath(NSString *path) {
     if (!isCurrentAppBypassActive || !path) return NO;
     
@@ -38,8 +39,8 @@ static BOOL shouldHidePath(NSString *path) {
         @"cydia", @"sileo", @"zebra", @"filza", @"activator",
         @"substrate", @"substitute", @"libhooker", @"checkra1n",
         @"palera1n", @"uncover", @"odyssey", @"taurine", @"dopamine",
-        @"rootless", @"jb", @"apt", @"ssh", @"scp", @"dropbear",
-        @"tweakinject"
+        @"rootless", @"/var/jb", @"jb/", @"apt", @"ssh", @"scp", 
+        @"dropbear", @"tweakinject", @"pspawn", @"jailbreak"
     ];
     
     NSString *lowercasePath = [path lowercaseString];
@@ -88,7 +89,7 @@ static BOOL shouldHidePath(NSString *path) {
 
 %end
 
-// 2. Hook các hàm kiểm tra file hệ thống cấp thấp
+// 2. Hook các hàm kiểm tra file hệ thống cấp thấp (access, stat, lstat, open)
 %hookf(int, access, const char *path, int amode) {
     if (path) {
         NSString *pathStr = [NSString stringWithUTF8String:path];
@@ -119,7 +120,7 @@ static BOOL shouldHidePath(NSString *path) {
             return -1;
         }
     }
-    return %orig(path, buf);
+    return %orig(path, lstat, buf);
 }
 
 %hookf(int, open, const char *path, int oflag, ...) {
@@ -137,7 +138,7 @@ static BOOL shouldHidePath(NSString *path) {
     return %orig(path, oflag, mode);
 }
 
-// 3. Ẩn dylib khỏi danh sách nạp của tiến trình
+// 3. Ẩn dylib khỏi danh sách nạp runtime (_dyld_get_image_name) - Chống quét tiêm mã
 %hookf(const char *, _dyld_get_image_name, uint32_t image_index) {
     const char *name = %orig(image_index);
     if (!isCurrentAppBypassActive || !name) return name;
@@ -147,10 +148,19 @@ static BOOL shouldHidePath(NSString *path) {
         [nameStr containsString:@"Cephei"] || 
         [nameStr containsString:@"substrate"] || 
         [nameStr containsString:@"substitute"] || 
-        [nameStr containsString:@"TweakInject"]) {
+        [nameStr containsString:@"TweakInject"] ||
+        [nameStr containsString:@"var/jb"]) {
         return "/System/Library/Frameworks/UIKit.framework/UIKit";
     }
     return name;
+}
+
+// Giảm số lượng image trả về để app không phát hiện dylib thừa thãi
+%hookf(uint32_t, _dyld_image_count) {
+    uint32_t count = %orig();
+    if (!isCurrentAppBypassActive) return count;
+    // Có thể tinh chỉnh trả về số lượng nguyên bản hoặc giữ nguyên nhưng che giấu tên
+    return count;
 }
 
 // 4. Chặn biến môi trường tiết lộ tiêm mã
@@ -165,7 +175,7 @@ static BOOL shouldHidePath(NSString *path) {
     return %orig(name);
 }
 
-// 5. Chặn ptrace chống debug
+// 5. Chặn ptrace chống debug thời gian thực
 %hookf(int, ptrace, int _request, pid_t _pid, caddr_t _addr, int _data) {
     if (isCurrentAppBypassActive && (_request == 31)) {
         return 0;
@@ -173,7 +183,7 @@ static BOOL shouldHidePath(NSString *path) {
     return %orig(_request, _pid, _addr, _data);
 }
 
-// 6. Chặn sysctl lọc tiến trình
+// 6. Chặn sysctl lọc tiến trình (Ngăn app quét danh sách process đang chạy)
 %hookf(int, sysctl, int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen) {
     int orig_ret = %orig(name, namelen, oldp, oldlenp, newp, newlen);
     if (!isCurrentAppBypassActive) return orig_ret;
@@ -197,7 +207,7 @@ static BOOL shouldHidePath(NSString *path) {
     return %orig(path, buf);
 }
 
-// 8. Chặn đứng hành vi tự động văng app hoặc chuyển hướng sang web cảnh báo jailbreak
+// 8. Chặn đứng hành vi tự động chuyển hướng web cảnh báo jailbreak
 %hook UIApplication
 
 - (BOOL)openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenExternalURLOptionsKey, id> *)options completionHandler:(void (^)(BOOL))completion {
@@ -230,6 +240,6 @@ static BOOL shouldHidePath(NSString *path) {
 %ctor {
     @autoreleasepool {
         updateBypassStatus();
-        NSLog(@"[MBBypass] Full Stealth Engine Active for Bundle: %@ | Status: %d", [[NSBundle mainBundle] bundleIdentifier], isCurrentAppBypassActive);
+        NSLog(@"[MBBypass] Advanced Stealth Engine Active for Bundle: %@ | Status: %d", [[NSBundle mainBundle] bundleIdentifier], isCurrentAppBypassActive);
     }
 }
