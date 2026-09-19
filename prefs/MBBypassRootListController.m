@@ -16,37 +16,19 @@
     if (!_specifiers) {
         NSMutableArray *specifiers = [NSMutableArray array];
 
-        // 1. Nhóm cài đặt chung
-        PSSpecifier *groupGeneral = [PSSpecifier preferenceSpecifierNamed:@"Cài đặt chung"
-                                                                  target:self
-                                                                     set:nil
-                                                                     get:nil
-                                                                 detail:Nil
-                                                                   cell:PSGroupCell
-                                                                   edit:Nil];
+        // 1. Nhóm cấu hình chung
+        PSSpecifier *groupGeneral = [PSSpecifier preferenceSpecifierNamed:@"Cài đặt chung" target:self set:nil get:nil detail:Nil cell:PSGroupCell edit:Nil];
         [specifiers addObject:groupGeneral];
 
-        PSSpecifier *switchGlobal = [PSSpecifier preferenceSpecifierNamed:@"Bật/Tắt Toàn Hệ Thống"
-                                                                 target:self
-                                                                    set:@selector(setPreferenceValue:specifier:)
-                                                                    get:@selector(readPreferenceValue:)
-                                                                 detail:Nil
-                                                                   cell:PSSwitchCell
-                                                                   edit:Nil];
+        PSSpecifier *switchGlobal = [PSSpecifier preferenceSpecifierNamed:@"Bật/Tắt Toàn Hệ Thống" target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:Nil cell:PSSwitchCell edit:Nil];
         [switchGlobal setProperty:@"com.onyx.mbbypass" forKey:@"defaults"];
         [switchGlobal setProperty:@"isEnabled" forKey:@"key"];
         [switchGlobal setProperty:@YES forKey:@"default"];
         [specifiers addObject:switchGlobal];
 
-        // 2. Nhóm danh sách ứng dụng
-        PSSpecifier *groupApps = [PSSpecifier preferenceSpecifierNamed:@"Tùy chỉnh ẩn theo ứng dụng"
-                                                               target:self
-                                                                  set:nil
-                                                                  get:nil
-                                                              detail:Nil
-                                                                cell:PSGroupCell
-                                                                edit:Nil];
-        [groupApps setProperty:@"Chọn các ứng dụng cần kích hoạt chế độ ẩn Jailbreak:" forKey:@"footerText"];
+        // 2. Nhóm danh sách ứng dụng quét động
+        PSSpecifier *groupApps = [PSSpecifier preferenceSpecifierNamed:@"Danh sách ứng dụng (Mặc định Tắt)" target:self set:nil get:nil detail:Nil cell:PSGroupCell edit:Nil];
+        [groupApps setProperty:@"Tự động quét toàn bộ app trong máy. Chỉ app nào được bật công tắc mới bị ẩn Jailbreak, các app khác giữ nguyên:" forKey:@"footerText"];
         [specifiers addObject:groupApps];
 
         @try {
@@ -55,6 +37,7 @@
                 id workspace = [LSWorkspace performSelector:@selector(defaultWorkspace)];
                 NSArray *installedApps = [workspace performSelector:@selector(allInstalledApplications)];
                 
+                // Sắp xếp danh sách ứng dụng theo tên chữ cái A-Z
                 NSArray *sortedApps = [installedApps sortedArrayUsingComparator:^NSComparisonResult(id app1, id app2) {
                     NSString *name1 = [app1 performSelector:@selector(localizedName)];
                     NSString *name2 = [app2 performSelector:@selector(localizedName)];
@@ -67,26 +50,20 @@
                     NSURL *bundleURL = [app performSelector:@selector(bundleURL)];
                     NSString *path = [bundleURL path];
                     
-                    // Chỉ lọc các ứng dụng của người dùng cài đặt để tránh nặng giao diện
+                    // Lọc bỏ các ứng dụng hệ thống ẩn cốt lõi để danh sách gọn gàng, chỉ hiển thị app người dùng & app bên thứ 3
                     if (bundleID && appName && path && ![path containsString:@"/System/"] && ![path containsString:@"/Library/CoreServices/"]) {
                         NSString *key = [NSString stringWithFormat:@"enabled_%@", bundleID];
                         
-                        PSSpecifier *appSwitch = [PSSpecifier preferenceSpecifierNamed:appName
-                                                                                target:self
-                                                                                   set:@selector(setPreferenceValue:specifier:)
-                                                                                   get:@selector(readPreferenceValue:)
-                                                                                detail:Nil
-                                                                                  cell:PSSwitchCell
-                                                                                  edit:Nil];
+                        PSSpecifier *appSwitch = [PSSpecifier preferenceSpecifierNamed:appName target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:Nil cell:PSSwitchCell edit:Nil];
                         [appSwitch setProperty:@"com.onyx.mbbypass" forKey:@"defaults"];
                         [appSwitch setProperty:key forKey:@"key"];
-                        [appSwitch setProperty:@YES forKey:@"default"];
+                        [appSwitch setProperty:@NO forKey:@"default"]; // Mặc định mỗi app mới quét ra đều là TẮT (NO)
                         [specifiers addObject:appSwitch];
                     }
                 }
             }
         } @catch (NSException *exception) {
-            NSLog(@"[MBBypass] Error loading apps: %@", exception);
+            NSLog(@"[MBBypass] Error scanning apps: %@", exception);
         }
 
         _specifiers = [specifiers copy];
