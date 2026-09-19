@@ -1,6 +1,9 @@
 TARGET := iphone:clang:latest:14.0
 INSTALL_TARGET_PROCESSES = SpringBoard
 
+# Khai báo kiến trúc biên dịch hỗ trợ đầy đủ
+ARCHS = arm64 arm64e
+
 # Tự động nhận diện chuẩn Rootless
 THEOS_PACKAGE_SCHEME = rootless
 
