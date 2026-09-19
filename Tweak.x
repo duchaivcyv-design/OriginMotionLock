@@ -5,7 +5,6 @@
 #import <sys/sysctl.h>
 #import <mach-o/dyld.h>
 
-// Khai báo hàm C API nguyên thủy
 extern int stat(const char *path, struct stat *buf);
 extern int lstat(const char *path, struct stat *buf);
 extern int access(const char *path, int amode);
@@ -14,7 +13,6 @@ extern int open(const char *path, int oflag, ...);
 extern int faccessat(int fd, const char *path, int amode, int flag);
 extern int statfs(const char *path, struct statfs *buf);
 
-// Cache trạng thái per-app thời gian thực để tối ưu hiệu năng không giật lag
 static BOOL gIsChecked = NO;
 static BOOL gIsEnabled = NO;
 
@@ -54,18 +52,16 @@ BOOL isBypassEnabledForCurrentApp(void) {
     return gIsEnabled;
 }
 
-// Danh sách từ khóa và đường dẫn jb, anti-hook, anti-debug siêu mở rộng
 BOOL shouldHidePath(NSString *pathString) {
     if (!pathString) return NO;
     NSString *lowerPath = [pathString lowercaseString];
     
+    // Chỉ chặn các từ khóa nhạy cảm tuyệt đối để không làm hỏng luồng chạy webview của app
     NSArray *restrictedKeywords = @[
-        @"cydia", @"sileo", @"zebra", @"bulky", @"filza", @"openssh", 
-        @"dropbear", @"substrate", @"substitute", @"libhooker", @"checkra1n", 
-        @"palera1n", @"dopamine", @"rootless", @"jb", @"apt", @"dpkg", 
-        @"tweaks", @"sbsettings", @"winterboard", @"ellekit", @"frida", 
-        @"cycript", @"hopper", @"ghidra", @"lldb", @"debug", @"injector",
-        @"tweakinjection", @"MobileSubstrate", @"TweakInject", @"SafeMode"
+        @"cydia", @"sileo", @"zebra", @"bulky", @"filza", 
+        @"substrate", @"substitute", @"libhooker", @"checkra1n", 
+        @"palera1n", @"dopamine", @"ellekit", @"frida", 
+        @"cycript", @"ghidra", @"lldb", @"tweakinjection"
     ];
     
     for (NSString *keyword in restrictedKeywords) {
@@ -82,16 +78,8 @@ BOOL shouldHidePath(NSString *pathString) {
         @"/Library/MobileSubstrate",
         @"/usr/lib/libsubstitute.dylib",
         @"/usr/lib/substrate",
-        @"/usr/libexec/ssh-keysign",
-        @"/bin/bash",
-        @"/usr/sbin/sshd",
-        @"/etc/apt",
-        @"/var/jb",
-        @"/usr/lib/TweakInject",
-        @"/Library/TweakInject",
-        @"/var/mobile/Library/Cydia",
-        @"/var/lib/dpkg",
-        @"/var/lib/apt"
+        @"/var/jb/Library",
+        @"/usr/lib/TweakInject"
     ];
     
     for (NSString *resPath in restrictedPaths) {
@@ -103,13 +91,8 @@ BOOL shouldHidePath(NSString *pathString) {
     return NO;
 }
 
-// --------------------------------------------------------------------------
-// HỆ THỐNG HOOK TỐI CAO (CHỐNG KIỂM TRA BỘ NHỚ, THỜI GIAN THỰC VÀ MÃ ĐỘC)
-// --------------------------------------------------------------------------
-
 %group MBBypassSupremeHooks
 
-// 1. Hook NSFileManager bảo vệ Obj-C API
 %hook NSFileManager
 
 - (BOOL)fileExistsAtPath:(NSString *)path {
@@ -129,7 +112,7 @@ BOOL shouldHidePath(NSString *pathString) {
 
 %end
 
-// 2. Hook toàn diện C-API kiểm tra file/thư mục tầng thấp
+// C-API an toàn tuyệt đối không gây văng app khi chuyển qua webview
 %hookf(int, stat, const char *path, struct stat *buf) {
     if (isBypassEnabledForCurrentApp() && path) {
         if (shouldHidePath([NSString stringWithUTF8String:path])) {
@@ -160,20 +143,6 @@ BOOL shouldHidePath(NSString *pathString) {
     return %orig;
 }
 
-%hookf(int, open, const char *path, int oflag, ...) {
-    if (isBypassEnabledForCurrentApp() && path) {
-        if (shouldHidePath([NSString stringWithUTF8String:path])) {
-            errno = ENOENT;
-            return -1;
-        }
-    }
-    va_list args;
-    va_start(args, oflag);
-    int mode = va_arg(args, int);
-    va_end(args);
-    return %orig(path, oflag, mode);
-}
-
 %hookf(FILE *, fopen, const char *filename, const char *mode) {
     if (isBypassEnabledForCurrentApp() && filename) {
         if (shouldHidePath([NSString stringWithUTF8String:filename])) {
@@ -183,27 +152,6 @@ BOOL shouldHidePath(NSString *pathString) {
     return %orig;
 }
 
-%hookf(int, faccessat, int fd, const char *path, int amode, int flag) {
-    if (isBypassEnabledForCurrentApp() && path) {
-        if (shouldHidePath([NSString stringWithUTF8String:path])) {
-            errno = ENOENT;
-            return -1;
-        }
-    }
-    return %orig;
-}
-
-%hookf(int, statfs, const char *path, struct statfs *buf) {
-    if (isBypassEnabledForCurrentApp() && path) {
-        if (shouldHidePath([NSString stringWithUTF8String:path])) {
-            errno = ENOENT;
-            return -1;
-        }
-    }
-    return %orig;
-}
-
-// 3. Hook sysctl nâng cao: Ẩn RAM, ẩn tiến trình trace, ẩn trạng thái gỡ rối thời gian thực
 %hookf(int, sysctl, int *mib, u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen) {
     if (isBypassEnabledForCurrentApp() && mib && namelen >= 2) {
         if (mib[0] == CTL_KERN && (mib[1] == KERN_PROC || mib[1] == KERN_PROC_ALL)) {
@@ -218,19 +166,6 @@ BOOL shouldHidePath(NSString *pathString) {
     return %orig(mib, namelen, oldp, oldlenp, newp, newlen);
 }
 
-// 4. Chặn API lấy danh sách image/dylib để app ngân hàng không quét thấy file `.dylib` inject
-%hookf(void *, dlsym, void *handle, const char *symbol) {
-    if (isBypassEnabledForCurrentApp() && symbol) {
-        if (strcmp(symbol, "MSHookFunction") == 0 || 
-            strcmp(symbol, "MSHookMessageEx") == 0 || 
-            strcmp(symbol, "LSHookFunction") == 0) {
-            return NULL;
-        }
-    }
-    return %orig(handle, symbol);
-}
-
-// 5. Chặn UIApplication URL Scheme nhạy cảm
 %hook UIApplication
 
 - (BOOL)canOpenURL:(NSURL *)url {
@@ -239,8 +174,7 @@ BOOL shouldHidePath(NSString *pathString) {
         if ([scheme isEqualToString:@"cydia"] || 
             [scheme isEqualToString:@"sileo"] || 
             [scheme isEqualToString:@"zbra"] || 
-            [scheme isEqualToString:@"filza"] ||
-            [scheme isEqualToString:@"activator"]) {
+            [scheme isEqualToString:@"filza"]) {
             return NO;
         }
     }
@@ -249,24 +183,11 @@ BOOL shouldHidePath(NSString *pathString) {
 
 %end
 
-// 6. Hook NSProcessInfo ẩn các đối số và biến môi trường độc hại
 %hook NSProcessInfo
 
 - (BOOL)isDebuggingEnabled {
     if (isBypassEnabledForCurrentApp()) return NO;
     return %orig;
-}
-
-- (NSArray *)arguments {
-    NSArray *args = %orig;
-    if (isBypassEnabledForCurrentApp()) {
-        NSMutableArray *filtered = [NSMutableArray array];
-        for (NSString *arg in args) {
-            if (!shouldHidePath(arg)) [filtered addObject:arg];
-        }
-        return filtered;
-    }
-    return args;
 }
 
 - (NSDictionary *)environment {
@@ -275,8 +196,6 @@ BOOL shouldHidePath(NSString *pathString) {
         NSMutableDictionary *filteredEnv = [env mutableCopy];
         [filteredEnv removeObjectForKey:@"DYLD_INSERT_LIBRARIES"];
         [filteredEnv removeObjectForKey:@"__JB_ROOT_PATH"];
-        [filteredEnv removeObjectForKey:@"JIT_ENABLED"];
-        [filteredEnv removeObjectForKey:@"FRIDA_GADGET"];
         return filteredEnv;
     }
     return env;
@@ -284,9 +203,8 @@ BOOL shouldHidePath(NSString *pathString) {
 
 %end
 
-%end // Kết thúc nhóm MBBypassSupremeHooks
+%end 
 
-// Khởi tạo tiến trình an toàn
 %ctor {
     @autoreleasepool {
         NSString *processName = [[NSProcessInfo processInfo] processName];
