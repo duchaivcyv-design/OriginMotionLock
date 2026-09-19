@@ -23,11 +23,16 @@ jobs:
 
       - name: Setup Theos and iOS SDK
         run: |
-          # Xóa sạch nếu tồn tại thư mục cũ bị lỗi
+          # Xóa hoàn toàn thư mục theos cũ nếu có
           rm -rf $HOME/theos
+          
+          # Clone Theos mới tinh
           git clone --recursive https://github.com/theos/theos.git $HOME/theos
           
-          # Clone trực tiếp bộ SDK chuẩn vào thư mục con sdks của theos
+          # Xóa phòng hờ thư mục sdks mặc định nếu lỡ có sẵn bên trong
+          rm -rf $HOME/theos/sdks
+          
+          # Clone bộ SDK chuẩn vào đúng vị trí
           git clone https://github.com/theos/sdks.git $HOME/theos/sdks
 
       - name: Build Package
