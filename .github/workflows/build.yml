@@ -11,24 +11,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install Dependencies
+      - name: Install Dependencies & Clang Toolchain
         run: |
           sudo apt-get update
-          sudo apt-get install -y dpkg-dev git make wget libssl-dev unzip curl
+          sudo apt-get install -y clang lld llvm dpkg-dev git make wget libssl-dev unzip curl
 
       - name: Install ldid manually
         run: |
           sudo wget -qO /usr/local/bin/ldid https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_linux_x86_64
           sudo chmod +x /usr/local/bin/ldid
 
-      - name: Setup Theos, Toolchain and SDK
+      - name: Setup Theos and SDK
         run: |
           rm -rf $HOME/theos
           git clone --recursive https://github.com/theos/theos.git $HOME/theos
           
-          # Tạo cấu trúc thư mục và clone đúng toolchain x86_64 cho Linux runner
-          mkdir -p $HOME/theos/toolchain/linux
-          git clone https://github.com/theos/toolchain.linux.x86_64.git $HOME/theos/toolchain/linux/iphone
+          # Tự tạo thư mục toolchain và liên kết (symlink) Clang/LLVM của Ubuntu vào đúng chỗ Theos cần
+          mkdir -p $HOME/theos/toolchain/linux/iphone/bin
+          ln -s /usr/bin/clang $HOME/theos/toolchain/linux/iphone/bin/clang
+          ln -s /usr/bin/clang++ $HOME/theos/toolchain/linux/iphone/bin/clang++
+          ln -s /usr/bin/llvm-ar $HOME/theos/toolchain/linux/iphone/bin/ar
+          ln -s /usr/bin/llvm-strip $HOME/theos/toolchain/linux/iphone/bin/strip
           
           # Cài bộ iOS SDK chuẩn
           rm -rf $HOME/theos/sdks
