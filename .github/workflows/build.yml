@@ -7,38 +7,14 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/theos/theos:latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang dpkg-dev git make wget libssl-dev unzip curl
-
-      - name: Install ldid manually
-        run: |
-          sudo wget -qO /usr/local/bin/ldid https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_linux_x86_64
-          sudo chmod +x /usr/local/bin/ldid
-
-      - name: Setup Theos, Toolchain and SDK
-        run: |
-          rm -rf $HOME/theos
-          git clone --recursive https://github.com/theos/theos.git $HOME/theos
-          
-          # Tải trực tiếp toolchain Linux cho Theos từ kho lưu trữ chính thức
-          git clone https://github.com/theos/toolchain.linux.arm64.git $HOME/theos/toolchain/linux/iphone || \
-          git clone https://github.com/theos/toolchain.linux.x86_64.git $HOME/theos/toolchain/linux/iphone || true
-          
-          # Cài thêm bộ iOS SDK chuẩn
-          rm -rf $HOME/theos/sdks
-          git clone https://github.com/theos/sdks.git $HOME/theos/sdks --depth=1
-
       - name: Build Package
-        env:
-          THEOS: /home/runner/theos
-        run: |
-          make package
+        run: make package
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
