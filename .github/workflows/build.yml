@@ -32,6 +32,7 @@ jobs:
           ln -sf /usr/bin/clang++ $HOME/theos/toolchain/linux/iphone/bin/clang++
           ln -sf /usr/bin/llvm-ar $HOME/theos/toolchain/linux/iphone/bin/ar
           ln -sf /usr/bin/llvm-strip $HOME/theos/toolchain/linux/iphone/bin/strip
+          ln -sf /usr/bin/llvm-lipo $HOME/theos/toolchain/linux/iphone/bin/lipo
           
           # Smart wrapper to translate version flags for ld.lld -flavor darwin
           cat << 'EOF' > $HOME/theos/toolchain/linux/iphone/bin/ld
