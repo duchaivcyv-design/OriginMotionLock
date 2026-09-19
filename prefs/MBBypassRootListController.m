@@ -7,6 +7,13 @@
 - (NSArray *)allInstalledApplications;
 @end
 
+@interface LSApplicationProxy : NSObject
+- (NSString *)applicationIdentifier;
+- (NSString *)localizedName;
+- (NSURL *)bundleURL;
+- (NSNumber *)isSystemApplication;
+@end
+
 @interface MBBypassRootListController : PSListController
 @end
 
@@ -14,7 +21,6 @@
 
 - (NSArray *)specifiers {
     if (!_specifiers) {
-        // Tải các thành phần tĩnh từ Root.plist trước
         _specifiers = [[self loadSpecifiersFromPlistName:@"Root" target:self] mutableCopy];
 
         NSMutableArray *bankApps = [NSMutableArray array];
@@ -27,10 +33,12 @@
                 id workspace = [LSWorkspace performSelector:@selector(defaultWorkspace)];
                 NSArray *installedApps = [workspace performSelector:@selector(allInstalledApplications)];
                 
-                // Sắp xếp danh sách ứng dụng theo tên A-Z
+                // Sắp xếp danh sách ứng dụng theo tên A-Z để dễ theo dõi
                 NSArray *sortedApps = [installedApps sortedArrayUsingComparator:^NSComparisonResult(id app1, id app2) {
                     NSString *name1 = [app1 performSelector:@selector(localizedName)];
                     NSString *name2 = [app2 performSelector:@selector(localizedName)];
+                    if (!name1) name1 = @"";
+                    if (!name2) name2 = @"";
                     return [name1 localizedCompare:name2];
                 }];
 
@@ -38,18 +46,34 @@
                 NSArray *socialKeywords = @[@"facebook", @"messenger", @"instagram", @"tiktok", @"zalo", @"telegram", @"whatsapp", @"twitter", @"reddit", @"discord"];
 
                 for (id app in sortedApps) {
-                    NSString *bundleID = [app performSelector:@selector(applicationIdentifier)];
-                    NSString *appName = [app performSelector:@selector(localizedName)];
-                    NSURL *bundleURL = [app performSelector:@selector(bundleURL)];
+                    NSString *bundleID = nil;
+                    NSString *appName = nil;
+                    NSURL *bundleURL = nil;
+
+                    if ([app respondsToSelector:@selector(applicationIdentifier)])
+                        bundleID = [app performSelector:@selector(applicationIdentifier)];
+                    if ([app respondsToSelector:@selector(localizedName)])
+                        appName = [app performSelector:@selector(localizedName)];
+                    if ([app respondsToSelector:@selector(bundleURL)])
+                        bundleURL = [app performSelector:@selector(bundleURL)];
+
                     NSString *path = [bundleURL path];
                     
-                    if (bundleID && appName && path && ![path containsString:@"/System/"] && ![path containsString:@"/Library/CoreServices/"]) {
+                    // Lọc chuẩn xác để chỉ lấy ứng dụng người dùng, loại bỏ app hệ thống ngầm
+                    BOOL isSystem = NO;
+                    if ([app respondsToSelector:@selector(isSystemApplication)]) {
+                        isSystem = [[app performSelector:@selector(isSystemApplication)] boolValue];
+                    } else if (path) {
+                        isSystem = [path containsString:@"/System/"] || [path containsString:@"/Library/CoreServices/"];
+                    }
+
+                    if (bundleID && appName && !isSystem) {
                         NSString *key = [NSString stringWithFormat:@"enabled_%@", bundleID];
                         
                         PSSpecifier *appSwitch = [PSSpecifier preferenceSpecifierNamed:appName target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:Nil cell:PSSwitchCell edit:Nil];
                         [appSwitch setProperty:@"com.onyx.mbbypass" forKey:@"defaults"];
                         [appSwitch setProperty:key forKey:@"key"];
-                        [appSwitch setProperty:@NO forKey:@"default"]; // Mặc định là TẮT
+                        [appSwitch setProperty:@NO forKey:@"default"];
 
                         NSString *lowerBundle = [bundleID lowercaseString];
                         NSString *lowerName = [appName lowercaseString];
@@ -81,13 +105,12 @@
                 }
             }
         } @catch (NSException *exception) {
-            NSLog(@"[MBBypass] Error: %@", exception);
+            NSLog(@"[MBBypass] Scan error: %@", exception);
         }
 
-        // Bổ sung các nhóm app có sẵn chữ tiêu đề và nút bật tắt tự động
+        // Thêm các nhóm vào giao diện Cài đặt
         if ([bankApps count] > 0) {
-            PSSpecifier *groupBank = [PSSpecifier preferenceSpecifierNamed:@"Ứng dụng Ngân hàng & Tài chính" target:self set:nil get:nil detail:Nil cell:PSGroupCell edit:Nil];
-            [groupBank setProperty:@"Bật công tắc riêng cho các app ngân hàng cần ẩn:" forKey:@"footerText"];
+            PSSpecifier *groupBank = [PSSpecifier preferenceSpecifierNamed:@"Ngân hàng & Tài chính" target:self set:nil get:nil detail:Nil cell:PSGroupCell edit:Nil];
             [_specifiers addObject:groupBank];
             [_specifiers addObjectsFromArray:bankApps];
         }
@@ -99,7 +122,7 @@
         }
 
         if ([otherApps count] > 0) {
-            PSSpecifier *groupOther = [PSSpecifier preferenceSpecifierNamed:@"Các ứng dụng khác trong máy" target:self set:nil get:nil detail:Nil cell:PSGroupCell edit:Nil];
+            PSSpecifier *groupOther = [PSSpecifier preferenceSpecifierNamed:@"Ứng dụng khác" target:self set:nil get:nil detail:Nil cell:PSGroupCell edit:Nil];
             [_specifiers addObject:groupOther];
             [_specifiers addObjectsFromArray:otherApps];
         }
@@ -108,18 +131,43 @@
 }
 
 - (id)readPreferenceValue:(PSSpecifier *)specifier {
-    NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:@"/var/jb/User/Library/Preferences/com.onyx.mbbypass.plist"];
+    NSString *path = @"/var/mobile/Library/Preferences/com.onyx.mbbypass.plist";
+    NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:path];
+    if (!dict) {
+        NSData *data = [NSData dataWithContentsOfFile:path];
+        if (data) {
+            dict = [NSPropertyListSerialization propertyListWithData:data options:NSPropertyListImmutable format:NULL error:nil];
+        }
+    }
+    if (!dict) {
+        dict = [NSDictionary dictionary];
+    }
     id value = [dict objectForKey:[specifier propertyForKey:@"key"]];
     return (value) ? value : [specifier propertyForKey:@"default"];
 }
 
 - (void)setPreferenceValue:(id)value specifier:(PSSpecifier *)specifier {
-    NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithContentsOfFile:@"/var/jb/User/Library/Preferences/com.onyx.mbbypass.plist"];
+    NSString *path = @"/var/mobile/Library/Preferences/com.onyx.mbbypass.plist";
+    NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithContentsOfFile:path];
+    if (!dict) {
+        NSData *data = [NSData dataWithContentsOfFile:path];
+        if (data) {
+            NSDictionary *temp = [NSPropertyListSerialization propertyListWithData:data options:NSPropertyListImmutable format:NULL error:nil];
+            if (temp) dict = [temp mutableCopy];
+        }
+    }
     if (!dict) {
         dict = [NSMutableDictionary dictionary];
     }
     [dict setObject:value forKey:[specifier propertyForKey:@"key"]];
-    [dict writeToFile:@"/var/jb/User/Library/Preferences/com.onyx.mbbypass.plist" atomically:YES];
+    
+    // Ghi file theo định dạng XML chuẩn để đọc toàn bộ dữ liệu không bị lỗi
+    NSData *xmlData = [NSPropertyListSerialization dataWithPropertyList:dict format:NSPropertyListXMLFormat_v1_0 options:0 error:nil];
+    if (xmlData) {
+        [xmlData writeToFile:path atomically:YES];
+    } else {
+        [dict writeToFile:path atomically:YES];
+    }
 }
 
 @end
