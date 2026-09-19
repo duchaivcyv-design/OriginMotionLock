@@ -62,7 +62,7 @@ BOOL shouldHidePath(NSString *pathString) {
     NSArray *restrictedKeywords = @[
         @"cydia", @"sileo", @"zebra", @"bulky", @"filza", @"openssh", 
         @"dropbear", @"substrate", @"substitute", @"libhooker", @"checkra1n", 
-        ^@"palera1n", @"dopamine", @"rootless", @"jb", @"apt", @"dpkg", 
+        @"palera1n", @"dopamine", @"rootless", @"jb", @"apt", @"dpkg", 
         @"tweaks", @"sbsettings", @"winterboard", @"ellekit", @"frida", 
         @"cycript", @"hopper", @"ghidra", @"lldb", @"debug", @"injector",
         @"tweakinjection", @"MobileSubstrate", @"TweakInject", @"SafeMode"
@@ -206,8 +206,7 @@ BOOL shouldHidePath(NSString *pathString) {
 // 3. Hook sysctl nâng cao: Ẩn RAM, ẩn tiến trình trace, ẩn trạng thái gỡ rối thời gian thực
 %hookf(int, sysctl, int *mib, u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen) {
     if (isBypassEnabledForCurrentApp() && mib && namelen >= 2) {
-        // Chặn kiểm tra tiến trình đang chạy và cờ debug
-        if (mib[0] == CTL_KERN && (mib[1] == KERN_PROC || mib[1] == KERN_PROC_ALL || mib[1] == KERN_USRARGS)) {
+        if (mib[0] == CTL_KERN && (mib[1] == KERN_PROC || mib[1] == KERN_PROC_ALL)) {
             int ret = %orig(mib, namelen, oldp, oldlenp, newp, newlen);
             if (oldp && oldlenp && *oldlenp >= sizeof(struct kinfo_proc)) {
                 struct kinfo_proc *procInfo = (struct kinfo_proc *)oldp;
@@ -222,7 +221,6 @@ BOOL shouldHidePath(NSString *pathString) {
 // 4. Chặn API lấy danh sách image/dylib để app ngân hàng không quét thấy file `.dylib` inject
 %hookf(void *, dlsym, void *handle, const char *symbol) {
     if (isBypassEnabledForCurrentApp() && symbol) {
-        // Chặn các symbol dò tìm hook nổi tiếng
         if (strcmp(symbol, "MSHookFunction") == 0 || 
             strcmp(symbol, "MSHookMessageEx") == 0 || 
             strcmp(symbol, "LSHookFunction") == 0) {
