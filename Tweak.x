@@ -3,10 +3,12 @@
 #import <Cephei/HBPreferences.h>
 #include <sys/stat.h>
 #include <sys/sysctl.h>
-#include <sys/ptrace.h>
 #include <dlfcn.h>
 #include <unistd.h>
 #include <mach-o/dyld.h>
+
+// Khai báo nguyên mẫu hàm ptrace thủ công để tránh lỗi thiếu file header trên Linux SDK
+extern int ptrace(int _request, pid_t _pid, caddr_t _addr, int _data);
 
 static HBPreferences *preferences = nil;
 static BOOL isGlobalEnabled = YES;
