@@ -14,23 +14,29 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y dpkg-dev git make wget libssl-dev unzip curl
+          sudo apt-get install -y clang lld llvm dpkg-dev git make wget libssl-dev unzip curl
 
       - name: Install ldid manually
         run: |
           sudo wget -qO /usr/local/bin/ldid https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_linux_x86_64
           sudo chmod +x /usr/local/bin/ldid
 
-      - name: Setup Theos and Official Toolchain
+      - name: Setup Theos and Symlinks
         run: |
           rm -rf $HOME/theos
           git clone --recursive https://github.com/theos/theos.git $HOME/theos
           
-          # Download and extract a working Linux toolchain for Theos to avoid native Linux ld conflicts
-          mkdir -p $HOME/theos/toolchain/linux
-          git clone --depth=1 https://github.com/theos/toolchain.linux.x86_64.git $HOME/theos/toolchain/linux/x86_64 || true
+          # Force create the exact toolchain directory structure expected by Theos
+          mkdir -p $HOME/theos/toolchain/linux/iphone/bin
           
-          # Fallback: if toolchain repo is restricted, download prebuilt swift/clang or use safe compiler flags
+          # Symlink system compilers and bin utils into Theos toolchain path
+          ln -sf /usr/bin/clang $HOME/theos/toolchain/linux/iphone/bin/clang
+          ln -sf /usr/bin/clang++ $HOME/theos/toolchain/linux/iphone/bin/clang++
+          ln -sf /usr/bin/llvm-ar $HOME/theos/toolchain/linux/iphone/bin/ar
+          ln -sf /usr/bin/llvm-strip $HOME/theos/toolchain/linux/iphone/bin/strip
+          ln -sf /usr/bin/ld.lld $HOME/theos/toolchain/linux/iphone/bin/ld
+          
+          # Clone official iOS SDKs
           rm -rf $HOME/theos/sdks
           git clone https://github.com/theos/sdks.git $HOME/theos/sdks --depth=1
 
