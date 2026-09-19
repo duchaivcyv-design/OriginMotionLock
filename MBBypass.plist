@@ -1,27 +1,33 @@
-{
-    Filter = {
-        Bundles = {
-            /* --- NHÓM NGÂN HÀNG & TÀI CHÍNH --- */
-            "com.mbmobile",
-            "com.mbbank.mbmobile",
-            "com.techcombank.mobile",
-            "com.vietcombank.VCBMobileBanking",
-            "com.vpbank.online",
-            "com.bidv.SmartBanking",
-            "com.vietinbank.ipay",
-            "com.sacombank.pay",
-            "com.acb.mobile",
-
-            /* --- NHÓM GAME GARENA / QUỐC TẾ --- */
-            "com.garena.game.kgvn",
-            "com.dts.freefireth",
-            "com.garena.game.lmrt",
-            "com.tencent.ig",
-            "com.pubg.imobile",
-
-            /* --- NHÓM HOYOVERSE --- */
-            "com.HoYoverse.GenshinImpact",
-            "com.hoyoverse.hkrpg"
-        };
-    };
-}
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Filter</key>
+	<dict>
+		<key>Bundles</key>
+		<array>
+			<!-- Ứng dụng chỉnh sửa video & Mạng xã hội -->
+			<string>com.lemon.lvoverseas</string> <!-- CapCut -->
+			<string>com.zhiliaoapp.musically</string> <!-- TikTok -->
+			<string>com.facebook.Facebook</string> <!-- Facebook -->
+			<string>com.mbmobile</string> <!-- MB Bank -->
+			<string>com.VCB</string> <!-- Vietcombank -->
+			<string>com.techcombank.mobile</string> <!-- Techcombank -->
+			<string>com.bidv.SmartBanking</string> <!-- BIDV -->
+			<string>com.vietinbank.iPay</string> <!-- VietinBank -->
+			<string>com.acb.mobile</string> <!-- ACB -->
+			<string>com.vpbank.online</string> <!-- VPBank NEO -->
+			<string>com.tpb.mobile</string> <!-- TPBank -->
+			<string>com.sacombank.mBanking</string> <!-- Sacombank Pay -->
+			<string>com.agribank.E-MobileBanking</string> <!-- Agribank -->
+			<string>vn.com.techcombank.f@stmobile</string> <!-- FastMobile Techcombank cũ -->
+			<string>com.tpbank.quickpay</string> <!-- TPBank QuickPay -->
+			<string>com.garena.game.kgvn</string> <!-- Liên Quân Mobile -->
+			<string>com.tencent.igvn</string>     <!-- PUBG Mobile VN -->
+			<string>com.dts.freefireth</string>   <!-- Free Fire -->
+			<string>com.hoyoverse.genshinimpact</string> <!-- Genshin Impact -->
+			<string>com.HoYoverse.HSR</string>     <!-- Honkai: Star Rail -->
+		</array>
+	</dict>
+</dict>
+</plist>
