@@ -3,6 +3,7 @@
 #import <Cephei/HBPreferences.h>
 #include <sys/stat.h>
 #include <sys/sysctl.h>
+#include <sys/ptrace.h>
 #include <dlfcn.h>
 #include <unistd.h>
 #include <mach-o/dyld.h>
