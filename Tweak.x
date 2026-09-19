@@ -6,7 +6,6 @@
 
 static BOOL isEnabled = YES;
 
-// Hàm kiểm tra và lọc các đường dẫn nhạy cảm của Jailbreak
 static BOOL shouldHidePath(NSString *path) {
     if (!isEnabled || !path) return NO;
     
@@ -26,7 +25,7 @@ static BOOL shouldHidePath(NSString *path) {
         @"/var/lib/apt",
         @"/var/log/apt",
         @"/usr/libexec/ssh-keysign",
-        @/usr/bin/ssh
+        @"/usr/bin/ssh"
     ];
     
     for (NSString *restricted in restrictedPaths) {
@@ -37,7 +36,6 @@ static BOOL shouldHidePath(NSString *path) {
     return NO;
 }
 
-// 1. Hook NSFileManager để chặn quét file/thư mục
 %hook NSFileManager
 
 - (BOOL)fileExistsAtPath:(NSString *)path {
@@ -57,7 +55,6 @@ static BOOL shouldHidePath(NSString *path) {
 
 %end
 
-// 2. Hook các hàm hệ thống C (C-functions) cấp thấp chống lách luật qua stat/access
 %hookf(int, access, const char *path, int amode) {
     if (path) {
         NSString *pathStr = [NSString stringWithUTF8String:path];
@@ -77,7 +74,7 @@ static BOOL shouldHidePath(NSString *path) {
             return -1;
         }
     }
-    return %orig(path, stat);
+    return %orig(path, buf);
 }
 
 %hookf(int, lstat, const char *path, struct stat *buf) {
@@ -88,10 +85,9 @@ static BOOL shouldHidePath(NSString *path) {
             return -1;
         }
     }
-    return %orig(path, lstat);
+    return %orig(path, buf);
 }
 
-// 3. Hook UIApplication để chặn mở URL Scheme của các chợ ứng dụng JB
 %hook UIApplication
 
 - (BOOL)canOpenURL:(NSURL *)url {
@@ -111,12 +107,9 @@ static BOOL shouldHidePath(NSString *path) {
 
 %end
 
-// Khởi tạo lấy trạng thái từ Cephei Preferences
 %ctor {
     @autoreleasepool {
         HBPreferences *preferences = [[HBPreferences alloc] initWithIdentifier:@"com.onyx.mbbypass"];
         [preferences registerBool:&isEnabled default:YES forKey:@"isEnabled"];
-        
-        NSLog(@"[MBBypass] Advanced Core Loaded. Status: %d", isEnabled);
     }
 }
