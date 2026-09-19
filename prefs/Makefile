@@ -1,7 +1,5 @@
 TARGET := iphone:clang:latest:14.0
-
-# Khai báo kiến trúc cho phân vùng prefs
-ARCHS = arm64
+INSTALL_TARGET_PROCESSES = Preferences
 
 include $(THEOS)/makefiles/common.mk
 
@@ -10,8 +8,8 @@ BUNDLE_NAME = MBBypassPrefs
 MBBypassPrefs_FILES = MBBypassRootListController.m
 MBBypassPrefs_FRAMEWORKS = UIKit
 MBBypassPrefs_PRIVATE_FRAMEWORKS = Preferences
-MBBypassPrefs_EXTRA_FRAMEWORKS = Cephei CepheiUI
+# Bắt buộc phải có 2 dòng gọi Cephei dưới đây:
+MBBypassPrefs_LIBRARIES = cephei
 MBBypassPrefs_INSTALL_PATH = /Library/PreferenceBundles
-MBBypassPrefs_CFLAGS = -fobjc-arc
 
-include $(THEOS_MAKE_PATH)/bundle.mk
+include $(THEOS_MAKE_PATH)/bundle.make
