@@ -1,0 +1,27 @@
+{
+    Filter = {
+        Bundles = {
+            /* --- NHÓM NGÂN HÀNG & TÀI CHÍNH --- */
+            "com.mbmobile",
+            "com.mbbank.mbmobile",
+            "com.techcombank.mobile",
+            "com.vietcombank.VCBMobileBanking",
+            "com.vpbank.online",
+            "com.bidv.SmartBanking",
+            "com.vietinbank.ipay",
+            "com.sacombank.pay",
+            "com.acb.mobile",
+
+            /* --- NHÓM GAME GARENA / QUỐC TẾ --- */
+            "com.garena.game.kgvn",
+            "com.dts.freefireth",
+            "com.garena.game.lmrt",
+            "com.tencent.ig",
+            "com.pubg.imobile",
+
+            /* --- NHÓM HOYOVERSE --- */
+            "com.HoYoverse.GenshinImpact",
+            "com.hoyoverse.hkrpg"
+        };
+    };
+}
