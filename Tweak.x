@@ -5,19 +5,39 @@
 #include <sys/sysctl.h>
 #include <dlfcn.h>
 #include <unistd.h>
+#include <mach-o/dyld.h>
 
-static BOOL isEnabled = YES;
+static HBPreferences *preferences = nil;
+static BOOL isGlobalEnabled = YES;
+static BOOL isCurrentAppBypassActive = YES;
 
-// Danh sách mở rộng toàn bộ các đường dẫn, tiến trình và từ khóa jailbreak cần che giấu
+// Hàm kiểm tra trạng thái bật/tắt theo từng app (Cơ chế giống VNodeBypass)
+static void updateBypassStatus() {
+    if (!preferences) {
+        preferences = [[HBPreferences alloc] initWithIdentifier:@"com.onyx.mbbypass"];
+        [preferences registerBool:&isGlobalEnabled default:YES forKey:@"isEnabled"];
+    }
+
+    NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
+    if (bundleID) {
+        // Mỗi app sẽ có một key riêng trong settings (ví dụ: enabled_com.mbbank.mbmobile)
+        NSString *key = [NSString stringWithFormat:@"enabled_%@", bundleID];
+        [preferences registerBool:&isCurrentAppBypassActive default:YES forKey:key];
+    }
+    
+    // Nếu tổng thể tắt hoặc app này bị tắt trong cài đặt thì bỏ qua bypass
+    isCurrentAppBypassActive = isGlobalEnabled && isCurrentAppBypassActive;
+}
+
 static BOOL shouldHidePath(NSString *path) {
-    if (!isEnabled || !path) return NO;
+    if (!isCurrentAppBypassActive || !path) return NO;
     
     NSArray *restrictedKeywords = @[
         @"cydia", @"sileo", @"zebra", @"filza", @"activator",
         @"substrate", @"substitute", @"libhooker", @"checkra1n",
         @"palera1n", @"uncover", @"odyssey", @"taurine", @"dopamine",
         @"rootless", @"jb", @"apt", @"ssh", @"scp", @"dropbear",
-        @"cy-handle", @"tweakinject"
+        @"tweakinject"
     ];
     
     NSString *lowercasePath = [path lowercaseString];
@@ -29,7 +49,7 @@ static BOOL shouldHidePath(NSString *path) {
     return NO;
 }
 
-// 1. Hook NSFileManager tối ưu hóa
+// 1. Hook NSFileManager
 %hook NSFileManager
 
 - (BOOL)fileExistsAtPath:(NSString *)path {
@@ -49,7 +69,7 @@ static BOOL shouldHidePath(NSString *path) {
 
 - (NSArray *)contentsOfDirectoryAtPath:(NSString *)path error:(NSError **)error {
     NSArray *result = %orig(path, error);
-    if (!isEnabled || !result) return result;
+    if (!isCurrentAppBypassActive || !result) return result;
     
     if (shouldHidePath(path)) {
         return @[];
@@ -66,7 +86,7 @@ static BOOL shouldHidePath(NSString *path) {
 
 %end
 
-// 2. Hook các hàm C cấp thấp (access, stat, lstat, open)
+// 2. Hook các hàm C cấp thấp
 %hookf(int, access, const char *path, int amode) {
     if (path) {
         NSString *pathStr = [NSString stringWithUTF8String:path];
@@ -115,49 +135,58 @@ static BOOL shouldHidePath(NSString *path) {
     return %orig(path, oflag, mode);
 }
 
-// 3. Chặn hàm quét tiến trình sysctl (Chống phát hiện các tiến trình tweak đang chạy ngầm)
+// 3. Ẩn dylib khỏi _dyld_get_image_name
+%hookf(const char *, _dyld_get_image_name, uint32_t image_index) {
+    const char *name = %orig(image_index);
+    if (!isCurrentAppBypassActive || !name) return name;
+    
+    NSString *nameStr = [NSString stringWithUTF8String:name];
+    if ([nameStr containsString:@"MBBypass"] || 
+        [nameStr containsString:@"Cephei"] || 
+        [nameStr containsString:@"substrate"] || 
+        [nameStr containsString:@"substitute"] || 
+        [nameStr containsString:@"TweakInject"]) {
+        return "/System/Library/Frameworks/UIKit.framework/UIKit";
+    }
+    return name;
+}
+
+// 4. Chặn biến môi trường phát hiện tiêm mã
+%hookf(char *, getenv, const char *name) {
+    if (isCurrentAppBypassActive && name) {
+        if (strcmp(name, "DYLD_INSERT_LIBRARIES") == 0 ||
+            strcmp(name, "_MSSafeMode") == 0 ||
+            strcmp(name, "Jailbroken") == 0) {
+            return NULL;
+        }
+    }
+    return %orig(name);
+}
+
+// 5. Chặn ptrace chống debug
+%hookf(int, ptrace, int _request, pid_t _pid, caddr_t _addr, int _data) {
+    if (isCurrentAppBypassActive && (_request == 31)) {
+        return 0;
+    }
+    return %orig(_request, _pid, _addr, _data);
+}
+
+// 6. Chặn quét tiến trình sysctl
 %hookf(int, sysctl, int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen) {
     int orig_ret = %orig(name, namelen, oldp, oldlenp, newp, newlen);
-    if (!isEnabled) return orig_ret;
+    if (!isCurrentAppBypassActive) return orig_ret;
     
-    // Nếu app đang cố gắng truy vấn thông tin tiến trình hoặc process info, lọc và làm sạch kết quả
     if (namelen >= 2 && name[0] == CTL_KERN && name[1] == KERN_PROC) {
-        // Trả về lỗi hoặc làm giả dữ liệu trống để app tưởng không có tiến trình lạ
         errno = EINVAL;
         return -1;
     }
-    
     return orig_ret;
 }
 
-// 4. Chặn URL Scheme kiểm tra chợ ứng dụng Jailbreak
-%hook UIApplication
-
-- (BOOL)canOpenURL:(NSURL *)url {
-    if (!isEnabled) return %orig(url);
-    
-    NSString *urlString = [[url absoluteString] lowercaseString];
-    if ([urlString hasPrefix:@"cydia://"] ||
-        [urlString hasPrefix:@"sileo://"] ||
-        [urlString hasPrefix:@"zbra://"] ||
-        [urlString hasPrefix:@"filza://"] ||
-        [urlString hasPrefix:@"activator://"] ||
-        [urlString hasPrefix:@"undecimus://"] ||
-        [urlString hasPrefix:@"saily://"]) {
-        return NO;
-    }
-    
-    return %orig(url);
-}
-
-%end
-
-// Khởi tạo lấy trạng thái từ Cephei Preferences
+// Khởi chạy cơ chế
 %ctor {
     @autoreleasepool {
-        HBPreferences *preferences = [[HBPreferences alloc] initWithIdentifier:@"com.onyx.mbbypass"];
-        [preferences registerBool:&isEnabled default:YES forKey:@"isEnabled"];
-        
-        NSLog(@"[MBBypass] Ultra Stealth Core Initialized. Status: %d", isEnabled);
+        updateBypassStatus();
+        NSLog(@"[MBBypass] Core Engine Active for Bundle: %@ | Status: %d", [[NSBundle mainBundle] bundleIdentifier], isCurrentAppBypassActive);
     }
 }
