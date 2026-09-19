@@ -7,14 +7,24 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: theosorg/theos:latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang ldid dpkg-dev git make
+
+      - name: Setup Theos
+        run: |
+          git clone --recursive https://github.com/theos/theos.git $HOME/theos
+
       - name: Build Package
-        run: make package
+        env:
+          THEOS: /home/runner/theos
+        run: |
+          make package
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
