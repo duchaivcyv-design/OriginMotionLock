@@ -4,11 +4,14 @@
 <dict>
 	<key>items</key>
 	<array>
+		<!-- Nhóm cấu hình chung -->
 		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
 			<key>label</key>
-			<string>Cấu hình chung</string>
+			<string>Cài đặt chung hệ thống</string>
+			<key>footerText</key>
+			<string>Bật công tắc này để kích hoạt toàn bộ cơ chế ẩn Jailbreak của tweak trên hệ thống.</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -24,8 +27,18 @@
 			<key>PostNotification</key>
 			<string>com.onyx.mbbypass/reloadPrefs</string>
 		</dict>
+
+		<!-- Nhóm thông tin hướng dẫn -->
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Hướng dẫn sử dụng</string>
+			<key>footerText</key>
+			<string>Bên dưới là danh sách các ứng dụng được quét tự động trong máy. Mặc định tất cả đều ở trạng thái TẮT. Chỉ khi nào cậu gạt bật ứng dụng nào, tweak mới tiến hành ẩn Jailbreak trên ứng dụng đó.</string>
+		</dict>
 	</array>
 	<key>title</key>
-	<string>MBBypass</string>
+	<string>MBBypass - Ẩn Jailbreak</string>
 </dict>
 </plist>
