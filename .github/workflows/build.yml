@@ -14,16 +14,18 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang dpkg-dev git make wget libssl-dev
+          sudo apt-get install -y clang dpkg-dev git make wget libssl-dev unzip
 
       - name: Install ldid manually
         run: |
           sudo wget -qO /usr/local/bin/ldid https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_linux_x86_64
           sudo chmod +x /usr/local/bin/ldid
 
-      - name: Setup Theos
+      - name: Setup Theos & SDK
         run: |
           git clone --recursive https://github.com/theos/theos.git $HOME/theos
+          # Tải iPhoneOS 14.4 SDK chuẩn để build tương thích ngược tốt từ iOS 12 đến 18
+          git clone https://github.com/theos/sdks.git $HOME/theos/sdks --depth=1
 
       - name: Build Package
         env:
