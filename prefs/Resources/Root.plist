@@ -4,7 +4,6 @@
 <dict>
 	<key>items</key>
 	<array>
-		<!-- Nhóm cấu hình chung -->
 		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
