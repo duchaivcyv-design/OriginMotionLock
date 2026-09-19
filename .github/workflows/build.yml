@@ -24,8 +24,9 @@ jobs:
       - name: Setup Theos & SDK
         run: |
           git clone --recursive https://github.com/theos/theos.git $HOME/theos
-          # Tải iPhoneOS 14.4 SDK chuẩn để build tương thích ngược tốt từ iOS 12 đến 18
-          git clone https://github.com/theos/sdks.git $HOME/theos/sdks --depth=1
+          if [ ! -d "$HOME/theos/sdks" ]; then
+            git clone https://github.com/theos/sdks.git $HOME/theos/sdks --depth=1
+          fi
 
       - name: Build Package
         env:
