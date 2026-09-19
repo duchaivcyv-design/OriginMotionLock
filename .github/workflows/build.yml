@@ -11,13 +11,31 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup Theos
-        uses: malcommac/theos-action@v2 # Hoặc dùng action action chuẩn của Theos
-        with:
-          theos-url: 'https://github.com/theos/theos.git'
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev git make wget libssl-dev unzip curl
+
+      - name: Install ldid manually
+        run: |
+          sudo wget -qO /usr/local/bin/ldid https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_linux_x86_64
+          sudo chmod +x /usr/local/bin/ldid
+
+      - name: Setup Theos and iOS SDK
+        run: |
+          rm -rf $HOME/theos
+          git clone --recursive https://github.com/theos/theos.git $HOME/theos
+          
+          # Sử dụng toolchain tự động tích hợp sẵn hoặc script bootstrap tiêu chuẩn của Theos hiện đại
+          # Nếu không dùng toolchain Linux riêng biệt, ta cấu hình biến môi trường để Theos dùng ldid chuẩn
+          rm -rf $HOME/theos/sdks
+          git clone https://github.com/theos/sdks.git $HOME/theos/sdks --depth=1
 
       - name: Build Package
-        run: make package
+        env:
+          THEOS: /home/runner/theos
+        run: |
+          make package
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
