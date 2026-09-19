@@ -48,9 +48,7 @@
 - (id)init {
     self = [super init];
     if (self) {
-        // Khởi tạo Cephei Preferences quản lý tệp cấu hình an toàn
         _sharedPreferences = [[HBPreferences alloc] initWithIdentifier:MBBYPASS_PREFERENCE_DOMAIN];
-        
         [self initializeStorageBuffers];
         _isMasterSwitchEnabled = [self fetchCurrentMasterState];
         [self executeDeepApplicationScanningEngine];
@@ -77,7 +75,7 @@
 }
 
 // ==============================================================================
-// 2. THUẬT TOÁN QUÉT ỨNG DỤNG CHI TIẾT (DEEP SCANNING ENGINE - HƠN 50 TỪ KHÓA)
+// 2. THUẬT TOÁN QUÉT ỨNG DỤNG CHI TIẾT (DEEP SCANNING ENGINE)
 // ==============================================================================
 - (void)executeDeepApplicationScanningEngine {
     [_cachedBankApplications removeAllObjects];
@@ -86,7 +84,6 @@
     [_cachedSocialSecurityApplications removeAllObjects];
 
     if (!%c(LSApplicationWorkspace)) {
-        NSLog(@"[MBBypass Warning] LSApplicationWorkspace không khả dụng trên tiến trình này.");
         return;
     }
 
@@ -94,23 +91,20 @@
         LSApplicationWorkspace *workspace = [%c(LSApplicationWorkspace) defaultWorkspace];
         NSArray *installedApps = [workspace allInstalledApplications];
 
-        // Danh sách từ khóa phân loại mở rộng toàn diện
         NSArray *bankKeywords = @[
-            // Ngân hàng Việt Nam phổ biến
             @"vietcombank", @"techcombank", @"bidv", @"vietinbank", @"mbmobile", 
             @"acb", @"vpbank", @"tpb", @"sacombank", @"vnpay", @"hdbank", 
             @"msb", @"vib", @"shb", @"eximbank", @"seabank", @"ocb", @"lpbank", 
             @"baoviet", @"namabank", @"pvcombank", @"kienlongbank", @"ncb", 
             @"pgbank", @"Saigonbank", @"VBSP", @"Agribank", @"CBBank", @"OceanBank",
-            // Ngân hàng quốc tế & tài chính khác
             @"citibank", @"hsbc", @"standardchartered", @"shinhan", @"woori", 
             @"cimb", @"uob", @"publicbank", @"dbs"
         ];
 
         NSArray *walletKeywords = @[
             @"zalopay", @"momo", @"viettelpay", @"airpay", @"shopeepay", 
-            @"VNPAY", @"vinid", @"moca", @"grab", @"finhay", @"timo", 
-            @"cake", @"tnex", @"uris", @"vnptmoney", @"payoo"
+            @"vinid", @"moca", @"grab", @"finhay", @"timo", 
+            @"cake", @"tnex", @"vnptmoney", @"payoo"
         ];
 
         NSArray *gameKeywords = @[
@@ -138,7 +132,6 @@
             }
 
             if (bundleID && appName) {
-                // Phân loại Ngân hàng & Tài chính
                 for (NSString *keyword in bankKeywords) {
                     if ([bundleID rangeOfString:keyword options:NSCaseInsensitiveSearch].location != NSNotFound ||
                         [appName rangeOfString:keyword options:NSCaseInsensitiveSearch].location != NSNotFound) {
@@ -146,7 +139,6 @@
                         break;
                     }
                 }
-                // Phân loại Ví điện tử & Thanh toán số
                 for (NSString *keyword in walletKeywords) {
                     if ([bundleID rangeOfString:keyword options:NSCaseInsensitiveSearch].location != NSNotFound ||
                         [appName rangeOfString:keyword options:NSCaseInsensitiveSearch].location != NSNotFound) {
@@ -154,7 +146,6 @@
                         break;
                     }
                 }
-                // Phân loại Trò chơi bảo mật cao
                 for (NSString *keyword in gameKeywords) {
                     if ([bundleID rangeOfString:keyword options:NSCaseInsensitiveSearch].location != NSNotFound ||
                         [appName rangeOfString:keyword options:NSCaseInsensitiveSearch].location != NSNotFound) {
@@ -162,7 +153,6 @@
                         break;
                     }
                 }
-                // Phân loại Dịch vụ công & An sinh xã hội
                 for (NSString *keyword in securityKeywords) {
                     if ([bundleID rangeOfString:keyword options:NSCaseInsensitiveSearch].location != NSNotFound ||
                         [appName rangeOfString:keyword options:NSCaseInsensitiveSearch].location != NSNotFound) {
@@ -173,12 +163,12 @@
             }
         }
     } @catch (NSException *exception) {
-        NSLog(@"[MBBypass DeepScan Error] Lỗi nghiêm trọng khi quét hệ thống: %@", exception.reason);
+        NSLog(@"[MBBypass DeepScan Error]: %@", exception.reason);
     }
 }
 
 // ==============================================================================
-// 3. XÂY DỰNG GIAO DIỆN SPECIFIERS VỚI CƠ CHẾ MASTER-SLAVE CHẶT CHẼ
+// 3. XÂY DỰNG GIAO DIỆN SPECIFIERS
 // ==============================================================================
 - (NSArray *)specifiers {
     if (!_specifiers) {
@@ -192,7 +182,7 @@
                                                                    detail:Nil
                                                                      cell:PSGroupCell
                                                                      edit:Nil];
-        [groupSystem setProperty:@"Kích hoạt công tắc tổng để mở khóa toàn bộ hệ thống ẩn Sandbox, chặn Anti-Debug và các thiết lập chuyên sâu bên dưới." forKey:@"footerText"];
+        [groupSystem setProperty:@"Kích hoạt công tắc tổng để mở khóa toàn bộ hệ thống ẩn Sandbox và các thiết lập chuyên sâu bên dưới." forKey:@"footerText"];
         [specifiers addObject:groupSystem];
 
         // Công tắc tổng (Master Switch)
@@ -207,34 +197,6 @@
         [switchMaster setProperty:@"isEnabled" forKey:@"key"];
         [switchMaster setProperty:@YES forKey:@"default"];
         [specifiers addObject:switchMaster];
-
-        // Công tắc phụ trợ ẩn tiến trình con
-        PSSwitchSpecifier *switchProcess = [PSSwitchSpecifier preferenceSpecifierNamed:@"Ẩn tiến trình & Anti-Debug"
-                                                                                 target:self
-                                                                                    set:@selector(setPreferenceValue:specifier:)
-                                                                                    get:@selector(readPreferenceValue:)
-                                                                                 detail:Nil
-                                                                                   cell:PSSwitchCell
-                                                                                   edit:Nil];
-        [switchProcess setProperty:MBBYPASS_PREFERENCE_DOMAIN forKey:@"defaults"];
-        [switchProcess setProperty:@"hideChildProcesses" forKey:@"key"];
-        [switchProcess setProperty:@YES forKey:@"default"];
-        [switchProcess setProperty:@(_isMasterSwitchEnabled) forKey:@"enabled"];
-        [specifiers addObject:switchProcess];
-
-        // Công tắc tự động bắt lỗi mạng/jailbreak bypass nâng cao
-        PSSwitchSpecifier *switchAdvancedBypass = [PSSwitchSpecifier preferenceSpecifierNamed:@"Chặn Hook Phát hiện Sandbox"
-                                                                                        target:self
-                                                                                           set:@selector(setPreferenceValue:specifier:)
-                                                                                           get:@selector(readPreferenceValue:)
-                                                                                        detail:Nil
-                                                                                          cell:PSSwitchCell
-                                                                                          edit:Nil];
-        [switchAdvancedBypass setProperty:MBBYPASS_PREFERENCE_DOMAIN forKey:@"defaults"];
-        [switchAdvancedBypass setProperty:@"advancedSandboxBypass" forKey:@"key"];
-        [switchAdvancedBypass setProperty:@YES forKey:@"default"];
-        [switchAdvancedBypass setProperty:@(_isMasterSwitchEnabled) forKey:@"enabled"];
-        [specifiers addObject:switchAdvancedBypass];
 
         // --- HÀM HELPER KHỞI TẠO NHÓM ỨNG DỤNG ĐỘNG ---
         void (^constructAppGroupSpecs)(NSArray *, NSString *, NSString *) = ^(NSArray *appArray, NSString *groupTitle, NSString *footerDescription) {
@@ -252,8 +214,6 @@
                     [appSwitchSpec setProperty:MBBYPASS_PREFERENCE_DOMAIN forKey:@"defaults"];
                     [appSwitchSpec.properties setObject:preferenceKey forKey:@"key"];
                     [appSwitchSpec setProperty:@YES forKey:@"default"];
-                    
-                    // Ràng buộc mờ / sáng theo Master Switch
                     [appSwitchSpec setProperty:@(_isMasterSwitchEnabled) forKey:@"enabled"];
                     
                     [specifiers addObject:appSwitchSpec];
@@ -261,30 +221,23 @@
             }
         };
 
-        // --- NHÓM 2: NGÂN HÀNG & TÀI CHÍNH ---
-        constructAppGroupSpecs(_cachedBankApplications, @"Ngân hàng & Tài chính", [NSString stringWithFormat:@"Hệ thống tự động quét và tìm thấy %lu ứng dụng ngân hàng.", (unsigned long)_cachedBankApplications.count]);
+        // --- CÁC NHÓM ỨNG DỤNG ---
+        constructAppGroupSpecs(_cachedBankApplications, @"Ngân hàng & Tài chính", [NSString stringWithFormat:@"Tìm thấy %lu ứng dụng ngân hàng.", (unsigned long)_cachedBankApplications.count]);
+        constructAppGroupSpecs(_cachedWalletApplications, @"Ví điện tử & Thanh toán số", [NSString stringWithFormat:@"Tìm thấy %lu ví điện tử.", (unsigned long)_cachedWalletApplications.count]);
+        constructAppGroupSpecs(_cachedSocialSecurityApplications, @"Dịch vụ công & Định danh", [NSString stringWithFormat:@"Tìm thấy %lu ứng dụng bảo mật công.", (unsigned long)_cachedSocialSecurityApplications.count]);
+        constructAppGroupSpecs(_cachedGameApplications, @"Trò chơi & Chống gian lận", [NSString stringWithFormat:@"Tìm thấy %lu trò chơi.", (unsigned long)_cachedGameApplications.count]);
 
-        // --- NHÓM 3: VÍ ĐIỆN TỬ ---
-        constructAppGroupSpecs(_cachedWalletApplications, @"Ví điện tử & Thanh toán số", [NSString stringWithFormat:@"Hệ thống tự động quét và tìm thấy %lu ví điện tử.", (unsigned long)_cachedWalletApplications.count]);
-
-        // --- NHÓM 4: DỊCH VỤ CÔNG & AN SINH XÃ HỘI ---
-        constructAppGroupSpecs(_cachedSocialSecurityApplications, @"Dịch vụ công & Định danh", [NSString stringWithFormat:@"Hệ thống tự động quét và tìm thấy %lu ứng dụng bảo mật công.", (unsigned long)_cachedSocialSecurityApplications.count]);
-
-        // --- NHÓM 5: TRÒ CHƠI BẢO MẬT CAO ---
-        constructAppGroupSpecs(_cachedGameApplications, @"Trò chơi & Chống gian lận", [NSString stringWithFormat:@"Hệ thống tự động quét và tìm thấy %lu trò chơi.", (unsigned long)_cachedGameApplications.count]);
-
-        // --- NHÓM 6: THÔNG TIN TÁC GIẢ & HỆ THỐNG ---
-        PSSpecifier *groupInfo = [PSSpecifier preferenceSpecifierNamed:@"Thông tin Gói Tweak"
+        // --- NHÓM THÔNG TIN & LÀM MỚI ---
+        PSSpecifier *groupInfo = [PSSpecifier preferenceSpecifierNamed:@"Hệ thống"
                                                                  target:self
                                                                     set:nil
                                                                     get:nil
                                                                  detail:Nil
                                                                    cell:PSGroupCell
                                                                    edit:Nil];
-        [groupInfo setProperty:@"MBBypass được thiết kế tối ưu hóa riêng cho các nền tảng rootless hiện đại, sử dụng cơ chế Cephei & RocketBootstrap." forKey:@"footerText"];
+        [groupInfo setProperty:@"MBBypass chạy trên nền tảng rootless hiện đại, sử dụng cơ chế Cephei & RocketBootstrap." forKey:@"footerText"];
         [specifiers addObject:groupInfo];
 
-        // Nút bấm làm mới cache thủ công
         PSSpecifier *buttonRefresh = [PSSpecifier preferenceSpecifierNamed:@"Làm mới Danh sách Ứng dụng"
                                                                      target:self
                                                                         set:nil
@@ -301,7 +254,7 @@
 }
 
 // ==============================================================================
-// 4. QUẢN LÝ DỮ LIỆU & ĐỒNG BỘ THÔNG BÁO LIÊN TIẾN TRÌNH (ROCKETBOOTSTRAP)
+// 4. QUẢN LÝ DỮ LIỆU & ĐỒNG BỘ
 // ==============================================================================
 - (id)readPreferenceValue:(PSSpecifier *__nonnull)specifier {
     @try {
@@ -320,32 +273,26 @@
         NSString *key = [specifier propertyForKey:@"key"];
         if (key) {
             [_sharedPreferences setObject:value forKey:key];
-            
-            // Gửi thông báo Darwin kết hợp RocketBootstrap để đồng bộ sang mọi sandbox app
             CPNotificationCenterPostNotification(MBBYPASS_NOTIF_KEY, YES);
         }
     } @catch (NSException *exception) {
-        NSLog(@"[MBBypass Error] Không thể lưu giá trị cấu hình: %@", exception.reason);
+        NSLog(@"[MBBypass Error] Không thể lưu giá trị: %@", exception.reason);
     }
 }
 
 - (void)setMasterPreferenceValue:(id __nonnull)value specifier:(PSSpecifier *__nonnull)specifier {
     [self setPreferenceValue:value specifier:specifier];
     _isMasterSwitchEnabled = [value boolValue];
-    
-    // Ép tải lại toàn bộ specifiers để làm mờ hoặc sáng các tuỳ chọn phụ thuộc
     [self reloadSpecifiers];
 }
 
 - (void)handleCustomReloadAction {
-    // Quét lại toàn bộ ứng dụng mới cài đặt và nạp lại giao diện
     [self executeDeepApplicationScanningEngine];
-    _specifiers = nil; // Xóa cache cũ
+    _specifiers = nil;
     [self reloadSpecifiers];
     
-    // Hiển thị thông báo xác nhận mượt mà qua UIAlertController nếu cần thiết
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Thành công" 
-                                                                   message:@"Đã làm mới toàn bộ cơ chế quét ứng dụng trên thiết bị!" 
+                                                                   message:@"Đã làm mới danh sách ứng dụng thành công!" 
                                                             preferredStyle:UIAlertControllerStyleAlert];
     [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
     [self presentViewController:alert animated:YES completion:nil];
