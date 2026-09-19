@@ -14,7 +14,12 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang ldid dpkg-dev git make
+          sudo apt-get install -y clang dpkg-dev git make wget libssl-dev
+
+      - name: Install ldid manually
+        run: |
+          sudo wget -qO /usr/local/bin/ldid https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_linux_x86_64
+          sudo chmod +x /usr/local/bin/ldid
 
       - name: Setup Theos
         run: |
