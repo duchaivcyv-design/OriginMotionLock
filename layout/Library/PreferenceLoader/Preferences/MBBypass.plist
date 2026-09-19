@@ -4,11 +4,14 @@
 <dict>
 	<key>entry</key>
 	<dict>
-		<cell>PSLinkCell</cell>
 		<key>bundle</key>
 		<string>MBBypassPrefs</string>
-		<key>isController</key>
-		<true/>
+		<key>cell</key>
+		<string>PSSwitchCell</string>
+		<key>detail</key>
+		<string>MBBypassRootListController</string>
+		<key>icon</key>
+		<string>icon.png</string>
 		<key>label</key>
 		<string>MBBypass</string>
 	</dict>
