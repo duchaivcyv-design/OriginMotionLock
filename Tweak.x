@@ -3,18 +3,19 @@
 #import <Cephei/HBPreferences.h>
 #include <sys/stat.h>
 #include <sys/sysctl.h>
+#include <sys/mount.h>
 #include <dlfcn.h>
 #include <unistd.h>
 #include <mach-o/dyld.h>
 
-// Khai báo nguyên mẫu hàm ptrace thủ công để tránh lỗi thiếu file header trên Linux SDK
+// Khai báo nguyên mẫu hàm ptrace thủ công để tương thích hoàn toàn với Linux SDK
 extern int ptrace(int _request, pid_t _pid, caddr_t _addr, int _data);
 
 static HBPreferences *preferences = nil;
 static BOOL isGlobalEnabled = YES;
 static BOOL isCurrentAppBypassActive = YES;
 
-// Hàm kiểm tra trạng thái bật/tắt theo từng app (Cơ chế giống VNodeBypass)
+// Đồng bộ trạng thái cấu hình tùy chỉnh cho từng app
 static void updateBypassStatus() {
     if (!preferences) {
         preferences = [[HBPreferences alloc] initWithIdentifier:@"com.onyx.mbbypass"];
@@ -23,12 +24,10 @@ static void updateBypassStatus() {
 
     NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
     if (bundleID) {
-        // Mỗi app sẽ có một key riêng trong settings (ví dụ: enabled_com.mbbank.mbmobile)
         NSString *key = [NSString stringWithFormat:@"enabled_%@", bundleID];
         [preferences registerBool:&isCurrentAppBypassActive default:YES forKey:key];
     }
     
-    // Nếu tổng thể tắt hoặc app này bị tắt trong cài đặt thì bỏ qua bypass
     isCurrentAppBypassActive = isGlobalEnabled && isCurrentAppBypassActive;
 }
 
@@ -89,7 +88,7 @@ static BOOL shouldHidePath(NSString *path) {
 
 %end
 
-// 2. Hook các hàm C cấp thấp
+// 2. Hook các hàm kiểm tra file hệ thống cấp thấp
 %hookf(int, access, const char *path, int amode) {
     if (path) {
         NSString *pathStr = [NSString stringWithUTF8String:path];
@@ -138,7 +137,7 @@ static BOOL shouldHidePath(NSString *path) {
     return %orig(path, oflag, mode);
 }
 
-// 3. Ẩn dylib khỏi _dyld_get_image_name
+// 3. Ẩn dylib khỏi danh sách nạp của tiến trình
 %hookf(const char *, _dyld_get_image_name, uint32_t image_index) {
     const char *name = %orig(image_index);
     if (!isCurrentAppBypassActive || !name) return name;
@@ -154,7 +153,7 @@ static BOOL shouldHidePath(NSString *path) {
     return name;
 }
 
-// 4. Chặn biến môi trường phát hiện tiêm mã
+// 4. Chặn biến môi trường tiết lộ tiêm mã
 %hookf(char *, getenv, const char *name) {
     if (isCurrentAppBypassActive && name) {
         if (strcmp(name, "DYLD_INSERT_LIBRARIES") == 0 ||
@@ -174,7 +173,7 @@ static BOOL shouldHidePath(NSString *path) {
     return %orig(_request, _pid, _addr, _data);
 }
 
-// 6. Chặn quét tiến trình sysctl
+// 6. Chặn sysctl lọc tiến trình
 %hookf(int, sysctl, int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen) {
     int orig_ret = %orig(name, namelen, oldp, oldlenp, newp, newlen);
     if (!isCurrentAppBypassActive) return orig_ret;
@@ -186,10 +185,51 @@ static BOOL shouldHidePath(NSString *path) {
     return orig_ret;
 }
 
-// Khởi chạy cơ chế
+// 7. Ẩn phân vùng gắn kết rootless (/var/jb) qua statfs
+%hookf(int, statfs, const char *path, struct statfs *buf) {
+    if (isCurrentAppBypassActive && path) {
+        NSString *pathStr = [NSString stringWithUTF8String:path];
+        if ([pathStr containsString:@"/var/jb"] || [pathStr containsString:@"jb"]) {
+            errno = ENOENT;
+            return -1;
+        }
+    }
+    return %orig(path, buf);
+}
+
+// 8. Chặn đứng hành vi tự động văng app hoặc chuyển hướng sang web cảnh báo jailbreak
+%hook UIApplication
+
+- (BOOL)openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenExternalURLOptionsKey, id> *)options completionHandler:(void (^)(BOOL))completion {
+    if (isCurrentAppBypassActive && url) {
+        NSString *urlString = [[url absoluteString] lowercaseString];
+        if ([urlString containsString:@"jailbreak"] || 
+            [urlString containsString:@"root"] || 
+            [urlString containsString:@"warning"] ||
+            [urlString containsString:@"security"]) {
+            return NO;
+        }
+    }
+    return %orig(url, options, completion);
+}
+
+- (BOOL)openURL:(NSURL *)url {
+    if (isCurrentAppBypassActive && url) {
+        NSString *urlString = [[url absoluteString] lowercaseString];
+        if ([urlString containsString:@"jailbreak"] || 
+            [urlString containsString:@"root"] || 
+            [urlString containsString:@"warning"]) {
+            return NO;
+        }
+    }
+    return %orig(url);
+}
+
+%end
+
 %ctor {
     @autoreleasepool {
         updateBypassStatus();
-        NSLog(@"[MBBypass] Core Engine Active for Bundle: %@ | Status: %d", [[NSBundle mainBundle] bundleIdentifier], isCurrentAppBypassActive);
+        NSLog(@"[MBBypass] Full Stealth Engine Active for Bundle: %@ | Status: %d", [[NSBundle mainBundle] bundleIdentifier], isCurrentAppBypassActive);
     }
 }
