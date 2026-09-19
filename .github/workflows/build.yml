@@ -1,34 +1,23 @@
-name: Build Theos Tweak
+name: Build Tweak
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches: [ "main" ]
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
+    container:
+      image: sympathich/theos:latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Install Dependencies
-        run: |
-          brew install ldid make
-
-      - name: Setup Theos
-        run: |
-          git clone --recursive https://github.com/theos/theos.git $HOME/theos
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       - name: Build Package
-        env:
-          THEOS: /Users/runner/theos
-        run: |
-          make package THEOS_PACKAGE_SCHEME=rootless
+        run: make package
 
-      - name: Upload Artifact (.deb)
-        uses: actions/upload-artifact@v4
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
         with:
-          name: OriginMotionLock-deb
+          name: deb-package
           path: packages/*.deb
