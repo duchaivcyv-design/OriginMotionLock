@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Dependencies
         run: |
@@ -59,7 +59,6 @@ jobs:
                 shift 2
                 ;;
               -arch)
-                # Map standard arm64e/arm64 for lld darwin flavor
                 NEW_ARGS+=("-arch" "$2")
                 shift 2
                 ;;
