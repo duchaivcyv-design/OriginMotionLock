@@ -1,9 +1,9 @@
-Package: com.yourname.originmotionlock
-Name: OriginMotionLock
-Author: TaoJB
-Description: Hiệu ứng nghiêng máy dịch chuyển ảnh nền 3D cho màn hình khóa iOS.
-Architecture: arm64
+Package: com.onyx.mbbypass
+Name: MBBypass
+Depends: mobilesubstrate, firmware (>= 15.0)
 Version: 1.0.0
-Maintainer: duchaivcyv <your-email@gmail.com>
-Depends: mobilesubstrate, firmware (>= 14.0), preferenceloader
+Architecture: iphone-arm64
+Maintainer: Onyx
+Author: Onyx
 Section: Tweaks
+Description: Rootless jailbreak detection bypass for banking apps and games.
