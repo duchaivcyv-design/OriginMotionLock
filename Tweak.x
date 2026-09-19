@@ -1,40 +1,54 @@
-#import <substrate.h>
-#import <unistd.h>
-#import <sys/stat.h>
-#import <string.h>
-#import <errno.h>
+#import <UIKit/UIKit.h>
+#import <Foundation/Foundation.h>
 
-static BOOL checkPath(const char *path) {
-    if (!path) return NO;
+// 1. Hook NSFileManager để ẩn các đường dẫn/file đặc trưng của Jailbreak
+%hook NSFileManager
+
+- (BOOL)fileExistsAtPath:(NSString *)path {
+    // Danh sách các file/thư mục jailbreak thường bị ứng dụng quét
+    NSArray *restrictedPaths = @[
+        @"/Applications/Cydia.app",
+        @"/Applications/Sileo.app",
+        @"/Applications/Zebra.app",
+        @"/usr/sbin/sshd",
+        @"/bin/bash",
+        @"/etc/apt",
+        @"/Library/MobileSubstrate/MobileSubstrate.dylib",
+        @"/var/jb"
+    ];
     
-    const char *targets[] = {"/var/jb", "sileo", "cydia", "apt", "Zebra", "substitute", "ellekit", NULL};
-    for (int i = 0; targets[i] != NULL; i++) {
-        if (strstr(path, targets[i])) {
-            return YES;
+    for (NSString *restrictedPath in restrictedPaths) {
+        if ([path isEqualToString:restrictedPath]) {
+            return NO; // Trả về NO để đánh lừa ứng dụng rằng không tìm thấy
         }
     }
-    return NO;
+    
+    return %orig(path);
 }
 
-static int (*orig_access)(const char *path, int mode);
-static int replacement_access(const char *path, int mode) {
-    if (checkPath(path)) {
-        errno = ENOENT;
-        return -1;
+%end
+
+// 2. Hook UIApplication để chặn ứng dụng phát hiện các gói quản lý thông qua URL Scheme
+%hook UIApplication
+
+- (BOOL)canOpenURL:(NSURL *)url {
+    NSString *urlString = [[url absoluteString] lowercaseString];
+    
+    if ([urlString hasPrefix:@"cydia://"] ||
+        [urlString hasPrefix:@"sileo://"] ||
+        [urlString hasPrefix:@"zbra://"] ||
+        [urlString hasPrefix:@"filza://"]) {
+        return NO;
     }
-    return orig_access(path, mode);
+    
+    return %orig(url);
 }
 
-static int (*orig_stat)(const char *path, struct stat *buf);
-static int replacement_stat(const char *path, struct stat *buf) {
-    if (checkPath(path)) {
-        errno = ENOENT;
-        return -1;
-    }
-    return orig_stat(path, buf);
-}
+%end
 
+// 3. Khởi tạo constructor khi tweak được nạp vào bộ nhớ ứng dụng
 %ctor {
-    MSHookFunction((void *)access, (void *)replacement_access, (void **)&orig_access);
-    MSHookFunction((void *)stat, (void *)replacement_stat, (void **)&orig_stat);
+    @autoreleasepool {
+        NSLog(@"[MBBypass] Tweak successfully loaded into process: %@", [[NSProcessInfo processInfo] processName]);
+    }
 }
