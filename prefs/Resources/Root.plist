@@ -8,9 +8,7 @@
 			<key>cell</key>
 			<string>PSGroupCell</string>
 			<key>label</key>
-			<string>Cài đặt chung hệ thống</string>
-			<key>footerText</key>
-			<string>Bật công tắc này để kích hoạt toàn bộ cơ chế ẩn Jailbreak của tweak trên hệ thống.</string>
+			<string>Cài đặt chung</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -23,16 +21,12 @@
 			<string>isEnabled</string>
 			<key>label</key>
 			<string>Bật/Tắt Toàn Hệ Thống</string>
-			<key>PostNotification</key>
-			<string>com.onyx.mbbypass/reloadPrefs</string>
 		</dict>
 		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
 			<key>label</key>
-			<string>Quản lý ứng dụng</string>
-			<key>footerText</key>
-			<string>Hệ thống sẽ tự động quét toàn bộ ứng dụng trong máy và chia thành các mục bên dưới. Mặc định tất cả đều TẮT, cậu muốn ẩn app nào thì gạt bật app đó.</string>
+			<string>Danh sách ứng dụng (Tự động phân loại)</string>
 		</dict>
 	</array>
 	<key>title</key>
