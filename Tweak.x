@@ -2,6 +2,7 @@
 #import <UIKit/UIKit.h>
 #import <dlfcn.h>
 #import <sys/stat.h>
+#import <sys/sysctl.h>
 
 // Khai báo hàm C API nguyên thủy để hook trực tiếp thời gian thực
 extern int stat(const char *path, struct stat *buf);
@@ -56,7 +57,7 @@ BOOL shouldHidePath(NSString *pathString) {
         }
     }
     
-    // Các đường dẫn hệ thống jailbreak cụ thể (đã bọc ngoặc kép đầy đủ)
+    // Các đường dẫn hệ thống jailbreak cụ thể
     NSArray *restrictedPaths = @[
         @"/Applications/Cydia.app",
         @"/Applications/Sileo.app",
@@ -82,7 +83,7 @@ BOOL shouldHidePath(NSString *pathString) {
 }
 
 // --------------------------------------------------------------------------
-// HỆ THỐNG HOOK THỜI GIAN THỰC (RUNTIME HOOKS)
+// HỆ THỐNG HOOK NÂNG CAO (RUNTIME & ANTI-DEBUG HOOKS)
 // --------------------------------------------------------------------------
 
 %group MBBypassAdvancedHooks
@@ -158,7 +159,24 @@ BOOL shouldHidePath(NSString *pathString) {
     return %orig;
 }
 
-// 3. Hook UIApplication để chặn các URL Scheme nhạy cảm (cydia://, sileo://,...)
+// 3. Hook sysctl để ngăn app dò tìm tiến trình lạ hoặc trạng thái debug
+%hookf(int, sysctl, int *mib, u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen) {
+    if (isBypassEnabledForCurrentApp() && mib && namelen >= 2) {
+        // Chặn các cờ kiểm tra tiến trình / debug (P_TRACED)
+        if (mib[0] == CTL_KERN && mib[1] == KERN_PROC) {
+            int ret = %orig(mib, namelen, oldp, oldlenp, newp, newlen);
+            if (oldp && oldlenp && *oldlenp >= sizeof(struct kinfo_proc)) {
+                struct kinfo_proc *procInfo = (struct kinfo_proc *)oldp;
+                // Che giấu cờ trace nếu có
+                procInfo->kp_proc.p_flag &= ~P_TRACED;
+            }
+            return ret;
+        }
+    }
+    return %orig(mib, namelen, oldp, oldlenp, newp, newlen);
+}
+
+// 4. Hook UIApplication để chặn các URL Scheme nhạy cảm (cydia://, sileo://,...)
 %hook UIApplication
 
 - (BOOL)canOpenURL:(NSURL *)url {
@@ -177,8 +195,15 @@ BOOL shouldHidePath(NSString *pathString) {
 
 %end
 
-// 4. Hook NSProcessInfo để che giấu các biến môi trường (Environment Variables) hoặc tiến trình lạ
+// 5. Hook NSProcessInfo để che giấu các biến môi trường và thông tin debug
 %hook NSProcessInfo
+
+- (BOOL)isDebuggingEnabled {
+    if (isBypassEnabledForCurrentApp()) {
+        return NO;
+    }
+    return %orig;
+}
 
 - (NSArray *)arguments {
     NSArray *args = %orig;
