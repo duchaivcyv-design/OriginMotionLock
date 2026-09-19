@@ -21,12 +21,14 @@ jobs:
           sudo wget -qO /usr/local/bin/ldid https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_linux_x86_64
           sudo chmod +x /usr/local/bin/ldid
 
-      - name: Setup Theos & SDK
+      - name: Setup Theos and iOS SDK
         run: |
+          # Xóa sạch nếu tồn tại thư mục cũ bị lỗi
+          rm -rf $HOME/theos
           git clone --recursive https://github.com/theos/theos.git $HOME/theos
-          if [ ! -d "$HOME/theos/sdks" ]; then
-            git clone https://github.com/theos/sdks.git $HOME/theos/sdks --depth=1
-          fi
+          
+          # Clone trực tiếp bộ SDK chuẩn vào thư mục con sdks của theos
+          git clone https://github.com/theos/sdks.git $HOME/theos/sdks
 
       - name: Build Package
         env:
