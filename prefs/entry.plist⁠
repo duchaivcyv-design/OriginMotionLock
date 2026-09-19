@@ -10,7 +10,9 @@
 		<key>bundle</key>
 		<string>MBBypassPrefs</string>
 		<key>cellClass</key>
-		<string>HBTwitterCell</string>
+		<string>HBLinkTableCell</string>
+		<key>icon</key>
+		<string>icon.png</string>
 		<key>label</key>
 		<string>MBBypass</string>
 	</dict>
