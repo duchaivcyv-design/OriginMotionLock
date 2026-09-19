@@ -15,7 +15,6 @@ static HBPreferences *preferences = nil;
 static BOOL isGlobalEnabled = YES;
 static BOOL isCurrentAppBypassActive = NO;
 
-// Kiểm tra và phân tách riêng biệt cho từng ứng dụng
 static void updateBypassStatus() {
     if (!preferences) {
         preferences = [[HBPreferences alloc] initWithIdentifier:@"com.onyx.mbbypass"];
@@ -28,7 +27,7 @@ static void updateBypassStatus() {
         return;
     }
 
-    // Không bao giờ kích hoạt bypass trên SpringBoard hoặc ứng dụng Cài đặt để tránh lỗi hệ thống
+    // Loại trừ SpringBoard, Cài đặt và chính bộ quản lý tweak để tránh xung đột hệ thống
     if ([bundleID isEqualToString:@"com.apple.springboard"] || 
         [bundleID isEqualToString:@"com.apple.Preferences"] ||
         [bundleID isEqualToString:@"com.onyx.mbbypass.prefs"]) {
@@ -36,32 +35,37 @@ static void updateBypassStatus() {
         return;
     }
 
-    // Kiểm tra trạng thái riêng của app này trong file cấu hình (mặc định là NO để các app khác không bị ảnh hưởng)
     NSString *key = [NSString stringWithFormat:@"enabled_%@", bundleID];
     BOOL isAppExplicitlyEnabled = NO;
     [preferences registerBool:&isAppExplicitlyEnabled default:NO forKey:key];
 
-    // Chỉ bật bypass nếu tổng thể bật VÀ app này được gạt công tắc bật trong Cài đặt
     isCurrentAppBypassActive = isGlobalEnabled && isAppExplicitlyEnabled;
 }
 
-// Danh sách đường dẫn và từ khóa cần ẩn siêu chi tiết cho Rootless & Rootful
+// Bộ lọc nâng cao: Mở rộng quét sâu toàn bộ các đường dẫn, dylib, tiến trình và socket rác của Jailbreak
 static BOOL shouldHidePath(NSString *path) {
     if (!isCurrentAppBypassActive || !path) return NO;
     
     NSArray *restrictedKeywords = @[
-        // Công cụ quản lý gói & kho ứng dụng
-        @"cydia", @"sileo", @"zebra", @"installer", @"filza", @"activator",
-        // Môi trường tiêm mã & substrate
+        // Kho ứng dụng & Trình quản lý gói
+        @"cydia", @"sileo", @"zebra", @"installer", @"filza", @"activator", @"zbra",
+        // Môi trường tiêm mã, hook & các framework
         @"substrate", @"substitute", @"libhooker", @"Cephei", @"TweakInject",
-        // Các dòng Jailbreak hiện đại (Dopamine, Palera1n, Taurine, Unc0ver, Checkra1n...)
+        @"ellekit", @"fishhook", @"rocketbootstrap", @"applist", @"preferenceloader",
+        // Các dòng Jailbreak hệ thống
         @"checkra1n", @"palera1n", @"uncover", @"odyssey", @"taurine", @"dopamine",
-        @"rootless", @"jb", @"pspawn", @"jailbreak", @"amfid",
-        // Đường dẫn hệ thống đặc trưng Rootless
-        @"/var/jb", @"/var/bin", @"/var/sbin", @"/var/etc",
-        // Lệnh hệ thống và tệp nhị phân Unix
+        @"rootless", @"rootful", @"electra", @"check10", @"pqruntime",
+        // Đường dẫn hệ thống đặc trưng Rootless & Rootful
+        @"/var/jb", @"/var/bin", @"/var/sbin", @"/var/etc", @"/var/log/apt",
+        @"/Library/MobileSubstrate", @"/Library/PreferenceBundles", @"/Library/Activator",
+        @"/Applications/Cydia.app", @"/Applications/Sileo.app", @"/Applications/Zebra.app",
+        @"/Applications/Filza.app", @"/Applications/BST.app",
+        // Lệnh hệ thống, tệp nhị phân Unix & công cụ quản trị
         @"apt", @"dpkg", @"ssh", @"scp", @"dropbear", @"rsync",
-        @"bash", @"sh", @"su", @"doas", @"zsh"
+        @"bash", @"sh", @"su", @"doas", @"zsh", @"nc", @"ncat",
+        // Dấu vết tiến trình & socket daemon ẩn
+        @"pspawn", @"jailbreak", @"amfid", @"debugserver", @"frida",
+        @"cycript", @"openssh", @"gdb", @"lldb", @"nsforward"
     ];
     
     NSString *lowercasePath = [path lowercaseString];
@@ -73,7 +77,7 @@ static BOOL shouldHidePath(NSString *path) {
     return NO;
 }
 
-// 1. Hook NSFileManager
+// 1. Hook NSFileManager triệt để
 %hook NSFileManager
 
 - (BOOL)fileExistsAtPath:(NSString *)path {
@@ -110,47 +114,35 @@ static BOOL shouldHidePath(NSString *path) {
 
 %end
 
-// 2. Hook các hàm kiểm tra file hệ thống cấp thấp
+// 2. Hook các hàm hệ thống cấp thấp (access, stat, lstat, open) chặn từ gốc kernel
 %hookf(int, access, const char *path, int amode) {
-    if (path) {
-        NSString *pathStr = [NSString stringWithUTF8String:path];
-        if (shouldHidePath(pathStr)) {
-            errno = ENOENT;
-            return -1;
-        }
+    if (path && shouldHidePath([NSString stringWithUTF8String:path])) {
+        errno = ENOENT;
+        return -1;
     }
     return %orig(path, amode);
 }
 
 %hookf(int, stat, const char *path, struct stat *buf) {
-    if (path) {
-        NSString *pathStr = [NSString stringWithUTF8String:path];
-        if (shouldHidePath(pathStr)) {
-            errno = ENOENT;
-            return -1;
-        }
+    if (path && shouldHidePath([NSString stringWithUTF8String:path])) {
+        errno = ENOENT;
+        return -1;
     }
     return %orig(path, buf);
 }
 
 %hookf(int, lstat, const char *path, struct stat *buf) {
-    if (path) {
-        NSString *pathStr = [NSString stringWithUTF8String:path];
-        if (shouldHidePath(pathStr)) {
-            errno = ENOENT;
-            return -1;
-        }
+    if (path && shouldHidePath([NSString stringWithUTF8String:path])) {
+        errno = ENOENT;
+        return -1;
     }
     return %orig(path, buf);
 }
 
 %hookf(int, open, const char *path, int oflag, ...) {
-    if (path) {
-        NSString *pathStr = [NSString stringWithUTF8String:path];
-        if (shouldHidePath(pathStr)) {
-            errno = ENOENT;
-            return -1;
-        }
+    if (path && shouldHidePath([NSString stringWithUTF8String:path])) {
+        errno = ENOENT;
+        return -1;
     }
     va_list args;
     va_start(args, oflag);
@@ -159,7 +151,7 @@ static BOOL shouldHidePath(NSString *path) {
     return %orig(path, oflag, mode);
 }
 
-// 3. Ẩn dylib khỏi runtime (_dyld_get_image_name)
+// 3. Ẩn toàn bộ dylib và tiến trình tiêm mã khỏi danh sách nạp runtime của dyld
 %hookf(const char *, _dyld_get_image_name, uint32_t image_index) {
     const char *name = %orig(image_index);
     if (!isCurrentAppBypassActive || !name) return name;
@@ -169,6 +161,7 @@ static BOOL shouldHidePath(NSString *path) {
         [nameStr containsString:@"Cephei"] || 
         [nameStr containsString:@"substrate"] || 
         [nameStr containsString:@"substitute"] || 
+        [nameStr containsString:@"ellekit"] || 
         [nameStr containsString:@"TweakInject"] ||
         [nameStr containsString:@"var/jb"]) {
         return "/System/Library/Frameworks/UIKit.framework/UIKit";
@@ -176,19 +169,20 @@ static BOOL shouldHidePath(NSString *path) {
     return name;
 }
 
-// 4. Chặn biến môi trường tiết lộ tiêm mã
+// 4. Chặn biến môi trường tiết lộ thông tin chèn mã
 %hookf(char *, getenv, const char *name) {
     if (isCurrentAppBypassActive && name) {
         if (strcmp(name, "DYLD_INSERT_LIBRARIES") == 0 ||
             strcmp(name, "_MSSafeMode") == 0 ||
-            strcmp(name, "Jailbroken") == 0) {
+            strcmp(name, "Jailbroken") == 0 ||
+            strcmp(name, "SIMULATOR_DEVICE_NAME") == 0) {
             return NULL;
         }
     }
     return %orig(name);
 }
 
-// 5. Chặn ptrace chống debug
+// 5. Chặn ptrace chống debug và phân tích động thời gian thực
 %hookf(int, ptrace, int _request, pid_t _pid, caddr_t _addr, int _data) {
     if (isCurrentAppBypassActive && (_request == 31)) {
         return 0;
@@ -196,19 +190,16 @@ static BOOL shouldHidePath(NSString *path) {
     return %orig(_request, _pid, _addr, _data);
 }
 
-// 6. Chặn sysctl lọc tiến trình
+// 6. Chặn sysctl làm sạch danh sách tiến trình đang chạy (Ngăn app phát hiện tiến trình lạ)
 %hookf(int, sysctl, int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen) {
-    int orig_ret = %orig(name, namelen, oldp, oldlenp, newp, newlen);
-    if (!isCurrentAppBypassActive) return orig_ret;
-    
-    if (namelen >= 2 && name[0] == CTL_KERN && name[1] == KERN_PROC) {
+    if (isCurrentAppBypassActive && namelen >= 2 && name[0] == CTL_KERN && name[1] == KERN_PROC) {
         errno = EINVAL;
         return -1;
     }
-    return orig_ret;
+    return %orig(name, namelen, oldp, oldlenp, newp, newlen);
 }
 
-// 7. Ẩn phân vùng gắn kết rootless (/var/jb) qua statfs
+// 7. Ẩn điểm gắn kết phân vùng rootless (`/var/jb`) qua statfs
 %hookf(int, statfs, const char *path, struct statfs *buf) {
     if (isCurrentAppBypassActive && path) {
         NSString *pathStr = [NSString stringWithUTF8String:path];
@@ -220,7 +211,7 @@ static BOOL shouldHidePath(NSString *path) {
     return %orig(path, buf);
 }
 
-// 8. Chặn đứng hành vi chuyển hướng web cảnh báo jailbreak
+// 8. Chặn đứng hành vi tự động văng app hoặc chuyển hướng sang trang web cảnh báo jailbreak
 %hook UIApplication
 
 - (BOOL)openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenExternalURLOptionsKey, id> *)options completionHandler:(void (^)(BOOL))completion {
