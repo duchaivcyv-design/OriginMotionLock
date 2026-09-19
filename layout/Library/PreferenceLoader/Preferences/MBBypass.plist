@@ -2,20 +2,79 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>entry</key>
-	<dict>
-		<key>bundle</key>
-		<string>MBBypassPrefs</string>
-		<key>cell</key>
-		<string>PSLinkCell</string>
-		<key>detail</key>
-		<string>MBBypassRootListController</string>
-		<key>icon</key>
-		<string>icon.png</string>
-		<key>isController</key>
-		<true/>
-		<key>label</key>
-		<string>MBBypass</string>
-	</dict>
+    <key>entry</key>
+    <dict>
+        <key>cell</key>
+        <string>PSLinkCell</string>
+        <key>icon</key>
+        <string>icon.png</string>
+        <key>label</key>
+        <string>MBBypass Config</string>
+    </dict>
+    <key>items</key>
+    <array>
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+            <key>label</key>
+            <string>Cấu hình ẩn Sandbox Ngân Hàng</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <true/>
+            <key>defaults</key>
+            <string>com.onyx.mbbypass</string>
+            <key>key</key>
+            <string>isEnabled</string>
+            <key>label</key>
+            <string>Kích hoạt tổng</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <true/>
+            <key>defaults</key>
+            <string>com.onyx.mbbypass</string>
+            <key>key</key>
+            <string>hideChildProcesses</string>
+            <key>label</key>
+            <string>Ẩn tiến trình con &amp; Anti-Debug</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+            <key>label</key>
+            <string>Ứng dụng mục tiêu</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <true/>
+            <key>defaults</key>
+            <string>com.onyx.mbbypass</string>
+            <key>key</key>
+            <string>enabled_vn.com.techcombank.mb.consumer</string>
+            <key>label</key>
+            <string>Techcombank MB</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <true/>
+            <key>defaults</key>
+            <string>com.onyx.mbbypass</string>
+            <key>key</key>
+            <string>enabled_com.vietcombank.mobilebanking</string>
+            <key>label</key>
+            <string>Vietcombank Digibank</string>
+        </dict>
+    </array>
+    <key>title</key>
+    <string>MBBypass Manager</string>
 </dict>
 </plist>
