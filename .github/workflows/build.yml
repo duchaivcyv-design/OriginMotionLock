@@ -26,12 +26,11 @@ jobs:
           rm -rf $HOME/theos
           git clone --recursive https://github.com/theos/theos.git $HOME/theos
           
-          # Tải đúng bộ toolchain biên dịch chéo Linux -> iOS chính thức từ Theos
+          # Tạo cấu trúc thư mục và clone đúng toolchain x86_64 cho Linux runner
           mkdir -p $HOME/theos/toolchain/linux
-          git clone https://github.com/theos/toolchain.linux.arm64.git $HOME/theos/toolchain/linux/iphone || \
-          git clone https://github.com/theos/toolchain.linux.x86_64.git $HOME/theos/toolchain/linux/iphone || true
+          git clone https://github.com/theos/toolchain.linux.x86_64.git $HOME/theos/toolchain/linux/iphone
           
-          # Tải bộ iOS SDK chuẩn
+          # Cài bộ iOS SDK chuẩn
           rm -rf $HOME/theos/sdks
           git clone https://github.com/theos/sdks.git $HOME/theos/sdks --depth=1
 
