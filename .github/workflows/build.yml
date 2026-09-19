@@ -14,7 +14,7 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang dpkg-dev git make wget libssl-dev unzip
+          sudo apt-get install -y clang dpkg-dev git make wget libssl-dev unzip curl
 
       - name: Install ldid manually
         run: |
@@ -24,16 +24,12 @@ jobs:
       - name: Setup Theos, Toolchain and SDK
         run: |
           rm -rf $HOME/theos
-          # Clone Theos kèm theo tất cả các submodule bắt buộc (bao gồm toolchain)
-          git clone --recursive https://github.com/theos/theos.git $HOME/theos
+          git clone https://github.com/theos/theos.git $HOME/theos
           
-          # Cài đặt toolchain Linux cho Theos
-          submodules=("toolchain/linux/iphone")
-          for sub in "${submodules[@]}"; do
-            git -C $HOME/theos submodule update --init --recursive "$sub" || true
-          done
+          # Chạy script bootstrap chính hãng của Theos để tự kéo toolchain Clang và các thành phần cần thiết cho Linux
+          bash $HOME/theos/bin/bootstrap.sh
           
-          # Xóa và tải chuẩn bộ SDK
+          # Cài thêm bộ iOS SDK chuẩn
           rm -rf $HOME/theos/sdks
           git clone https://github.com/theos/sdks.git $HOME/theos/sdks --depth=1
 
