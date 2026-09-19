@@ -11,7 +11,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install Dependencies & Clang Toolchain
+      - name: Install Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y clang lld llvm dpkg-dev git make wget libssl-dev unzip curl
@@ -26,12 +26,11 @@ jobs:
           rm -rf $HOME/theos
           git clone --recursive https://github.com/theos/theos.git $HOME/theos
           
-          # Tự tạo thư mục toolchain và liên kết (symlink) Clang/LLVM của Ubuntu vào đúng chỗ Theos cần
+          # Cấu hình symlink trỏ đúng công cụ clang/lld để không bị lỗi linker Linux
           mkdir -p $HOME/theos/toolchain/linux/iphone/bin
-          ln -s /usr/bin/clang $HOME/theos/toolchain/linux/iphone/bin/clang
-          ln -s /usr/bin/clang++ $HOME/theos/toolchain/linux/iphone/bin/clang++
-          ln -s /usr/bin/llvm-ar $HOME/theos/toolchain/linux/iphone/bin/ar
-          ln -s /usr/bin/llvm-strip $HOME/theos/toolchain/linux/iphone/bin/strip
+          ln -sf /usr/bin/clang $HOME/theos/toolchain/linux/iphone/bin/clang
+          ln -sf /usr/bin/clang++ $HOME/theos/toolchain/linux/iphone/bin/clang++
+          ln -sf /usr/bin/lld $HOME/theos/toolchain/linux/iphone/bin/ld
           
           # Cài bộ iOS SDK chuẩn
           rm -rf $HOME/theos/sdks
