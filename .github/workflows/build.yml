@@ -33,7 +33,7 @@ jobs:
           ln -sf /usr/bin/llvm-ar $HOME/theos/toolchain/linux/iphone/bin/ar
           ln -sf /usr/bin/llvm-strip $HOME/theos/toolchain/linux/iphone/bin/strip
           
-          # Create a wrapper for lipo pointing to llvm-lipo
+          # Wrapper for lipo
           cat << 'EOF' > $HOME/theos/toolchain/linux/iphone/bin/lipo
           #!/bin/bash
           if command -v llvm-lipo &> /dev/null; then
@@ -48,7 +48,7 @@ jobs:
           EOF
           chmod +x $HOME/theos/toolchain/linux/iphone/bin/lipo
           
-          # Smart wrapper to translate version flags for ld.lld -flavor darwin
+          # Advanced wrapper for ld to handle -flavor darwin, version flags, and -arch mapping
           cat << 'EOF' > $HOME/theos/toolchain/linux/iphone/bin/ld
           #!/bin/bash
           NEW_ARGS=("-flavor" "darwin")
@@ -56,6 +56,11 @@ jobs:
             case "$1" in
               -iphoneos_version_min)
                 NEW_ARGS+=("-platform_version" "ios" "$2" "$2")
+                shift 2
+                ;;
+              -arch)
+                # Map standard arm64e/arm64 for lld darwin flavor
+                NEW_ARGS+=("-arch" "$2")
                 shift 2
                 ;;
               *)
