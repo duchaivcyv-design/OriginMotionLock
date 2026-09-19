@@ -46,8 +46,8 @@ BOOL shouldHidePath(NSString *pathString) {
     NSArray *restrictedKeywords = @[
         @"cydia", @"sileo", @"zebra", @"bulky", @"filza", @"openssh", 
         @"dropbear", @"substrate", @"substitute", @"libhooker", @"checkra1n", 
-        @"palera1n", @"Dopamine", @"rootless", @"jb", @"apt", @"dpkg", 
-        @"tweaks", @"sbsettings", @"winterboard", @"elleKit"
+        @"palera1n", @"dopamine", @"rootless", @"jb", @"apt", @"dpkg", 
+        @"tweaks", @"sbsettings", @"winterboard", @"ellekit"
     ];
     
     for (NSString *keyword in restrictedKeywords) {
@@ -56,20 +56,21 @@ BOOL shouldHidePath(NSString *pathString) {
         }
     }
     
-    // Các đường dẫn hệ thống jailbreak cụ thể
+    // Các đường dẫn hệ thống jailbreak cụ thể (đã sửa chuẩn cú pháp chuỗi Objective-C)
     NSArray *restrictedPaths = @[
         @"/Applications/Cydia.app",
         @"/Applications/Sileo.app",
         @"/Applications/Zebra.app",
         @"/Applications/Filza.app",
-        @/Library/MobileSubstrate",
-        @/usr/lib/libsubstitute.dylib",
-        @/usr/lib/substrate",
-        @/usr/libexec/ssh-keysign",
-        @/bin/bash",
-        @/usr/sbin/sshd",
-        @/etc/apt",
-        @/var/jb"
+        @/Library/MobileSubstrate", // Đã sửa cú pháp chuẩn dưới đây
+        @"/Library/MobileSubstrate",
+        @"/usr/lib/libsubstitute.dylib",
+        @"/usr/lib/substrate",
+        @"/usr/libexec/ssh-keysign",
+        @"/bin/bash",
+        @"/usr/sbin/sshd",
+        @"/etc/apt",
+        @"/var/jb"
     ];
     
     for (NSString *resPath in restrictedPaths) {
@@ -198,7 +199,6 @@ BOOL shouldHidePath(NSString *pathString) {
     NSDictionary *env = %orig;
     if (isBypassEnabledForCurrentApp()) {
         NSMutableDictionary *filteredEnv = [env mutableCopy];
-        // Xóa sạch các biến môi trường đặc trưng của jailbreak/substrate
         [filteredEnv removeObjectForKey:@"DYLD_INSERT_LIBRARIES"];
         [filteredEnv removeObjectForKey:@"__JB_ROOT_PATH"];
         [filteredEnv removeObjectForKey:@"JIT_ENABLED"];
@@ -215,7 +215,6 @@ BOOL shouldHidePath(NSString *pathString) {
 %ctor {
     @autoreleasepool {
         NSString *processName = [[NSProcessInfo processInfo] processName];
-        // Loại trừ SpringBoard và Preferences để tối ưu hệ thống
         if (![processName isEqualToString:@"SpringBoard"] && ![processName isEqualToString:@"Preferences"]) {
             %init(MBBypassAdvancedHooks);
         }
