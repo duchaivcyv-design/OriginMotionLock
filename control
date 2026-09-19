@@ -1,9 +1,9 @@
 Package: com.onyx.mbbypass
 Name: MBBypass
-Version: 1.0.0
-Architecture: arm64
-Description: Tweak iOS (Rootless) mang hiệu ứng hình nền chuyển động theo góc nghiêng kiểu OriginOS lên màn hình khóa iPhone.
-Maintainer: duchaicvyv-design
-Author: duchaicvyv-design
+Version: 1.0.0-Debug
+Architecture: iphoneos-arm64
+Description: Tweak bypass jailbreak cho ứng dụng và game
+Maintainer: duchaicvcv-design
+Author: duchaicvcv-design
 Section: Tweaks
 Depends: mobilesubstrate, firmware (>= 14.0)
