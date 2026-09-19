@@ -9,7 +9,7 @@
         <key>icon</key>
         <string>icon.png</string>
         <key>label</key>
-        <string>MBBypass Config</string>
+        <string>MBBypass Manager</string>
     </dict>
     <key>items</key>
     <array>
@@ -17,7 +17,7 @@
             <key>cell</key>
             <string>PSGroupCell</string>
             <key>label</key>
-            <string>Cấu hình ẩn Sandbox Ngân Hàng</string>
+            <string>Hệ thống ẩn Sandbox &amp; Chống gỡ rối</string>
         </dict>
         <dict>
             <key>cell</key>
@@ -47,19 +47,7 @@
             <key>cell</key>
             <string>PSGroupCell</string>
             <key>label</key>
-            <string>Ứng dụng mục tiêu</string>
-        </dict>
-        <dict>
-            <key>cell</key>
-            <string>PSSwitchCell</string>
-            <key>default</key>
-            <true/>
-            <key>defaults</key>
-            <string>com.onyx.mbbypass</string>
-            <key>key</key>
-            <string>enabled_vn.com.techcombank.mb.consumer</string>
-            <key>label</key>
-            <string>Techcombank MB</string>
+            <string>Ngân hàng &amp; Tài chính</string>
         </dict>
         <dict>
             <key>cell</key>
@@ -71,7 +59,169 @@
             <key>key</key>
             <string>enabled_com.vietcombank.mobilebanking</string>
             <key>label</key>
-            <string>Vietcombank Digibank</string>
+            <string>Vietcombank</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <true/>
+            <key>defaults</key>
+            <string>com.onyx.mbbypass</string>
+            <key>key</key>
+            <string>enabled_vn.com.techcombank.mb.consumer</string>
+            <key>label</key>
+            <string>Techcombank</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <true/>
+            <key>defaults</key>
+            <string>com.onyx.mbbypass</string>
+            <key>key</key>
+            <string>enabled_com.bidv.SmartBanking</string>
+            <key>label</key>
+            <string>BIDV SmartBanking</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <true/>
+            <key>defaults</key>
+            <string>com.onyx.mbbypass</string>
+            <key>key</key>
+            <string>enabled_com.vietinbank.mobile</string>
+            <key>label</key>
+            <string>VietinBank iPay</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <true/>
+            <key>defaults</key>
+            <string>com.onyx.mbbypass</string>
+            <key>key</key>
+            <string>enabled_com.mbmobile</string>
+            <key>label</key>
+            <string>MB Bank</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <true/>
+            <key>defaults</key>
+            <string>com.onyx.mbbypass</string>
+            <key>key</key>
+            <string>enabled_com.acb.mobileapp</string>
+            <key>label</key>
+            <string>ACB ONE</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <true/>
+            <key>defaults</key>
+            <string>com.onyx.mbbypass</string>
+            <key>key</key>
+            <string>enabled_com.vpbank.online</string>
+            <key>label</key>
+            <string>VPBank NEO</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <true/>
+            <key>defaults</key>
+            <string>com.onyx.mbbypass</string>
+            <key>key</key>
+            <string>enabled_com.tpb.mobilebanking</string>
+            <key>label</key>
+            <string>TPBank Mobile</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <true/>
+            <key>defaults</key>
+            <string>com.onyx.mbbypass</string>
+            <key>key</key>
+            <string>enabled_com.sacombank.mobilebanking</string>
+            <key>label</key>
+            <string>Sacombank Pay</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <true/>
+            <key>defaults</key>
+            <string>com.onyx.mbbypass</string>
+            <key>key</key>
+            <string>enabled_com.vnpay.agribank</string>
+            <key>label</key>
+            <string>Agribank E-Mobile</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+            <key>label</key>
+            <string>Ví điện tử &amp; Game bảo mật cao</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <true/>
+            <key>defaults</key>
+            <string>com.onyx.mbbypass</string>
+            <key>key</key>
+            <string>enabled_com.vng.zalopay</string>
+            <key>label</key>
+            <string>ZaloPay</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <true/>
+            <key>defaults</key>
+            <string>com.onyx.mbbypass</string>
+            <key>key</key>
+            <string>enabled_com.momo.payment</string>
+            <key>label</key>
+            <string>MoMo</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <true/>
+            <key>defaults</key>
+            <string>com.onyx.mbbypass</string>
+            <key>key</key>
+            <string>enabled_com.vng.pubgmobile</string>
+            <key>label</key>
+            <string>PUBG Mobile</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <true/>
+            <key>defaults</key>
+            <string>com.onyx.mbbypass</string>
+            <key>key</key>
+            <string>enabled_com.HoYoverse.GenshinImpact</string>
+            <key>label</key>
+            <string>Genshin Impact</string>
         </dict>
     </array>
     <key>title</key>
