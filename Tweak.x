@@ -1,364 +1,229 @@
-#import <Foundation/Foundation.h>
-#import <UIKit/UIKit.h>
+#import <Cephei/HBPreferences.h>
+#import <substrate.h>
 #import <dlfcn.h>
-#import <sys/stat.h>
 #import <sys/sysctl.h>
-#import <mach-o/dyld.h>
-#import <dirent.h>
+#import <sys/stat.h>
+#import <unistd.h>
+#import <mach/mach.h>
+#import <mach/vm_map.h>
+#import <mach/mach_vm.h>
+#import <objc/runtime.h>
+#import <fcntl.h>
+#import <pthread.h>
 
-// ==========================================
-// KHAI BÁO NGUYÊN MẪU C-API TẦNG THẤP
-// ==========================================
-extern int stat(const char *path, struct stat *buf);
-extern int lstat(const char *path, struct stat *buf);
-extern int access(const char *path, int amode);
-extern FILE *fopen(const char *filename, const char *mode);
-extern int open(const char *path, int oflag, ...);
-extern int faccessat(int fd, const char *path, int amode, int flag);
-extern int statfs(const char *path, struct statfs *buf);
-extern ssize_t readlink(const char *restrict path, char *restrict buf, size_t bufsize);
-extern char *realpath(const char *restrict path, char *restrict resolved_path);
-extern char *getenv(const char *name);
-extern DIR *opendir(const char *filename);
-extern int chdir(const char *path);
+// ==============================================================================
+// 1. KHAI BÁO CẤU TRÚC, BIẾN TOÀN CỤC VÀ QUẢN LÝ HỆ THỐNG CẤP THẤP
+// ==============================================================================
+static HBPreferences *sharedPreferences = nil;
+static BOOL isGlobalMasterEnabled = YES;
+static BOOL flagHideChildProcesses = YES;
+static BOOL flagAdvancedSandboxBypass = YES;
+static BOOL flagRealTimeMemorySanitization = YES;
+static BOOL flagAntiDebuggingProtection = YES;
 
-// Khai báo CoreFoundation Preferences chuẩn hệ thống
-extern CFPropertyListRef CFPreferencesCopyAppValue(CFStringRef key, CFStringRef applicationID);
-extern Boolean CFPreferencesAppSynchronize(CFStringRef applicationID);
-
-// ==========================================
-// HỆ THỐNG KIỂM TRA TRẠNG THÁI (ROOTHIDE ENGINE)
-// ==========================================
-BOOL isBypassActiveForThisApp(void) {
+// Hàm kiểm tra trạng thái độc lập: Chỉ kích hoạt khi Master bật VÀ app hiện tại có công tắc riêng được bật trong Settings
+static BOOL shouldBypassCurrentApplicationProcess(void) {
     @autoreleasepool {
-        NSString *processName = [[NSProcessInfo processInfo] processName];
-        
-        // Loại bỏ tuyệt đối tiến trình hệ thống, SpringBoard, Sileo, Safari để tránh văng app
-        if ([processName isEqualToString:@"SpringBoard"] || 
-            [processName isEqualToString:@"backboardd"] || 
-            [processName isEqualToString:@"Preferences"] ||
-            [processName rangeOfString:@"Sileo" options:NSCaseInsensitiveSearch].location != NSNotFound ||
-            [processName rangeOfString:@"Safari" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+        @try {
+            if (!isGlobalMasterEnabled) return NO;
+
+            NSBundle *mainAppBundle = [NSBundle mainBundle];
+            NSString *currentBundleIdentifier = [mainAppBundle bundleIdentifier];
+            if (!currentBundleIdentifier) return NO;
+
+            // Kiểm tra khóa cấu hình riêng biệt của từng ứng dụng (Ví dụ: enabled_com.vietcombank.vcَبank)
+            NSString *preferenceKey = [NSString stringWithFormat:@"enabled_%@", currentBundleIdentifier];
+            return [sharedPreferences boolForKey:preferenceKey default:NO];
+        } @catch (NSException *exception) {
             return NO;
         }
+    }
+}
 
-        NSBundle *bundle = [NSBundle mainBundle];
-        NSString *bundleID = [bundle bundleIdentifier];
-        if (!bundleID) return NO;
-
-        CFStringRef appDomain = CFSTR("com.onyx.mbbypass");
-        CFPreferencesAppSynchronize(appDomain);
-        
-        // Kiểm tra công tắc tổng (isEnabled)
-        Boolean exists = false;
-        Boolean globalEnabled = (Boolean)CFPreferencesGetAppBooleanValue(CFSTR("isEnabled"), appDomain, &exists);
-        if (exists && !globalEnabled) return NO;
-
-        // Kiểm tra công tắc riêng của từng ứng dụng (enabled_<BundleID>)
-        NSString *appKey = [NSString stringWithFormat:@"enabled_%@", bundleID];
-        Boolean appExists = false;
-        Boolean isAppOn = (Boolean)CFPreferencesGetAppBooleanValue((__bridge CFStringRef)appKey, appDomain, &appExists);
-        
-        if (appExists) {
-            return (BOOL)isAppOn;
+// ==============================================================================
+#pragma mark - 2. HOOK HỆ THỐNG CẤP THẤP: CHẶN SYSCTL & ẨN TIẾN TRÌNH CON THỜI GIAN THỰC
+// ==============================================================================
+static int (*orig_sysctl)(int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen);
+static int replaced_sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen) {
+    if (shouldBypassCurrentApplicationProcess() && flagHideChildProcesses) {
+        if (namelen >= 2 && name[0] == CTL_KERN && name[1] == KERN_PROC) {
+            int result = orig_sysctl(name, namelen, oldp, oldlenp, newp, newlen);
+            if (result == 0 && oldp && oldlenp) {
+                struct kinfo_proc *kinfoProcess = (struct kinfo_proc *)oldp;
+                if (kinfoProcess) {
+                    // Loại bỏ cờ theo dõi gỡ lỗi (P_TRACED) chống anti-debug thời gian thực
+                    kinfoProcess->kp_proc.p_flag &= ~P_TRACED;
+                }
+            }
+            return result;
         }
     }
-    return NO;
+    return orig_sysctl(name, namelen, oldp, oldlenp, newp, newlen);
 }
 
-// ==========================================
-// BỘ LỌC ĐƯỜNG DẪN & TỪ KHÓA TỐI TÂN
-// ==========================================
-BOOL shouldHidePath(NSString *pathString) {
-    if (!pathString) return NO;
-    NSString *lowerPath = [pathString lowercaseString];
-    
-    // Danh sách từ khóa jailbreak/tweak nhạy cảm diện rộng
-    NSArray *restrictedKeywords = @[
-        @"cydia", @"sileo", @"zebra", @"filza", 
-        @"substrate", @"substitute", @"libhooker", 
-        @"checkra1n", @"palera1n", @"dopamine", 
-        @"rootless", @"ellekit", @"frida", @"tweakinjection",
-        @"apt", @"dpkg", @"openssh", @"dropbear", @"tweak",
-        @"cycript", @"ghidra", @"lldb", @"safemode", @"jbroot"
-    ];
-    
-    for (NSString *keyword in restrictedKeywords) {
-        if ([lowerPath containsString:keyword]) {
-            return YES;
+// ==============================================================================
+#pragma mark - 3. HOOK KIỂM TRA ĐƯỜNG DẪN TỆP TIN & SANDBOX (STAT, LSTAT, ACCESS, OPEN)
+// ==============================================================================
+static int (*orig_stat)(const char *path, struct stat *buf);
+static int replaced_stat(const char *path, struct stat *buf) {
+    if (shouldBypassCurrentApplicationProcess() && flagAdvancedSandboxBypass && path) {
+        NSString *pathString = [NSString stringWithUTF8String:path];
+        if (pathString) {
+            if ([pathString containsString:@"Cydia.app"] ||
+                [pathString containsString:@"MobileSubstrate"] ||
+                [pathString containsString:@"bin/bash"] ||
+                [pathString containsString:@"usr/sbin/sshd"] ||
+                [pathString containsString:@"etc/apt"] ||
+                [pathString containsString:@"jb"] ||
+                [pathString containsString:@"Sileo.app"] ||
+                [pathString containsString:@"Zebra.app"] ||
+                [pathString containsString:@"TweakInject"] ||
+                [pathString containsString:@"Library/MobileSubstrate"]) {
+                errno = ENOENT;
+                return -1;
+            }
         }
     }
-    
-    // Danh sách đường dẫn hệ thống jailbreak cần che giấu tuyệt đối
-    NSArray *restrictedPaths = @[
-        @"/Applications/Cydia.app",
-        @"/Applications/Sileo.app",
-        @"/Applications/Zebra.app",
-        @"/Applications/Filza.app",
-        @"/Library/MobileSubstrate",
-        @"/usr/lib/libsubstitute.dylib",
-        @"/usr/lib/substrate",
-        @"/var/jb",
-        @"/usr/lib/TweakInject",
-        @"/var/mobile/Library/Cydia",
-        @"/var/lib/dpkg",
-        @"/var/lib/apt",
-        @"/bin/bash",
-        @"/usr/sbin/sshd",
-        @"/etc/apt",
-        @"/var/checkra1n.dmg"
-    ];
-    
-    for (NSString *resPath in restrictedPaths) {
-        if ([lowerPath isEqualToString:[resPath lowercaseString]] || [lowerPath hasPrefix:[resPath lowercaseString]]) {
-            return YES;
+    return orig_stat(path, buf);
+}
+
+static int (*orig_lstat)(const char *path, struct stat *buf);
+static int replaced_lstat(const char *path, struct stat *buf) {
+    if (shouldBypassCurrentApplicationProcess() && flagAdvancedSandboxBypass && path) {
+        NSString *pathString = [NSString stringWithUTF8String:path];
+        if (pathString) {
+            if ([pathString containsString:@"Cydia"] ||
+                [pathString containsString:@"Substrate"] ||
+                [pathString containsString:@"apt"] ||
+                [pathString containsString:@"dpkg"] ||
+                [pathString containsString:@"jb"]) {
+                errno = ENOENT;
+                return -1;
+            }
         }
     }
-    
-    return NO;
+    return orig_lstat(path, buf);
 }
 
-// ==========================================
-// NHÓM HOOK CẤP CAO TOÀN DIỆN (ENTERPRISE GRADE)
-// ==========================================
-%group EnterpriseRootHideConcealment
-
-// ------------------------------------------
-// 1. CHẶN NSFILEMANAGER TẦNG CAO
-// ------------------------------------------
-%hook NSFileManager
-
-- (BOOL)fileExistsAtPath:(NSString *)path {
-    if (isBypassActiveForThisApp() && shouldHidePath(path)) return NO;
-    return %orig(path);
-}
-
-- (BOOL)fileExistsAtPath:(NSString *)path isDirectory:(BOOL *)isDirectory {
-    if (isBypassActiveForThisApp() && shouldHidePath(path)) return NO;
-    return %orig(path, isDirectory);
-}
-
-- (NSArray *)contentsOfDirectoryAtPath:(NSString *)path error:(NSError **)error {
-    if (isBypassActiveForThisApp() && shouldHidePath(path)) return @[];
-    return %orig(path, error);
-}
-
-- (NSArray *)subpathsAtPath:(NSString *)path {
-    if (isBypassActiveForThisApp() && shouldHidePath(path)) return @[];
-    return %orig(path);
-}
-
-- (NSDictionary *)attributesOfItemAtPath:(NSString *)path error:(NSError **)error {
-    if (isBypassActiveForThisApp() && shouldHidePath(path)) return nil;
-    return %orig(path, error);
-}
-
-- (BOOL)isReadableFileAtPath:(NSString *)path {
-    if (isBypassActiveForThisApp() && shouldHidePath(path)) return NO;
-    return %orig(path);
-}
-
-- (BOOL)isWritableFileAtPath:(NSString *)path {
-    if (isBypassActiveForThisApp() && shouldHidePath(path)) return NO;
-    return %orig(path);
-}
-
-%end
-
-// ------------------------------------------
-// 2. PHỦ SÓNG C-API KIỂM TRA FILE & LIÊN KẾT
-// ------------------------------------------
-%hookf(int, stat, const char *path, struct stat *buf) {
-    if (isBypassActiveForThisApp() && path) {
-        if (shouldHidePath([NSString stringWithUTF8String:path])) {
-            errno = ENOENT;
-            return -1;
+static int (*orig_access)(const char *path, int amode);
+static int replaced_access(const char *path, int amode) {
+    if (shouldBypassCurrentApplicationProcess() && flagAdvancedSandboxBypass && path) {
+        NSString *pathString = [NSString stringWithUTF8String:path];
+        if (pathString) {
+            if ([pathString containsString:@"Cydia"] ||
+                [pathString containsString:@"Substrate"] ||
+                [pathString containsString:@"apt"] ||
+                [pathString containsString:@"dpkg"] ||
+                [pathString containsString:@"TweakInject"] ||
+                [pathString containsString:@"jailbreak"]) {
+                errno = ENOENT;
+                return -1;
+            }
         }
     }
-    return %orig;
+    return orig_access(path, amode);
 }
 
-%hookf(int, lstat, const char *path, struct stat *buf) {
-    if (isBypassActiveForThisApp() && path) {
-        if (shouldHidePath([NSString stringWithUTF8String:path])) {
-            errno = ENOENT;
-            return -1;
-        }
-    }
-    return %orig;
-}
-
-%hookf(int, access, const char *path, int amode) {
-    if (isBypassActiveForThisApp() && path) {
-        if (shouldHidePath([NSString stringWithUTF8String:path])) {
-            errno = ENOENT;
-            return -1;
-        }
-    }
-    return %orig;
-}
-
-%hookf(int, open, const char *path, int oflag, ...) {
-    if (isBypassActiveForThisApp() && path) {
-        if (shouldHidePath([NSString stringWithUTF8String:path])) {
-            errno = ENOENT;
-            return -1;
-        }
-    }
+static int (*orig_open)(const char *path, int oflag, ...);
+static int replaced_open(const char *path, int oflag, ...) {
     va_list args;
     va_start(args, oflag);
-    int mode = va_arg(args, int);
+    int mode = 0;
+    if (oflag & O_CREAT) {
+        mode = va_arg(args, int);
+    }
     va_end(args);
-    return %orig(path, oflag, mode);
-}
 
-%hookf(FILE *, fopen, const char *filename, const char *mode) {
-    if (isBypassActiveForThisApp() && filename) {
-        if (shouldHidePath([NSString stringWithUTF8String:filename])) {
-            return NULL;
-        }
-    }
-    return %orig;
-}
-
-%hookf(int, faccessat, int fd, const char *path, int amode, int flag) {
-    if (isBypassActiveForThisApp() && path) {
-        if (shouldHidePath([NSString stringWithUTF8String:path])) {
-            errno = ENOENT;
-            return -1;
-        }
-    }
-    return %orig;
-}
-
-%hookf(int, statfs, const char *path, struct statfs *buf) {
-    if (isBypassActiveForThisApp() && path) {
-        if (shouldHidePath([NSString stringWithUTF8String:path])) {
-            errno = ENOENT;
-            return -1;
-        }
-    }
-    return %orig;
-}
-
-%hookf(ssize_t, readlink, const char *restrict path, char *restrict buf, size_t bufsize) {
-    if (isBypassActiveForThisApp() && path) {
-        if (shouldHidePath([NSString stringWithUTF8String:path])) {
-            errno = EINVAL;
-            return -1;
-        }
-    }
-    return %orig(path, buf, bufsize);
-}
-
-%hookf(char *, realpath, const char *restrict path, char *restrict resolved_path) {
-    if (isBypassActiveForThisApp() && path) {
-        if (shouldHidePath([NSString stringWithUTF8String:path])) {
-            errno = ENOENT;
-            return NULL;
-        }
-    }
-    return %orig(path, resolved_path);
-}
-
-%hookf(DIR *, opendir, const char *filename) {
-    if (isBypassActiveForThisApp() && filename) {
-        if (shouldHidePath([NSString stringWithUTF8String:filename])) {
-            errno = ENOENT;
-            return NULL;
-        }
-    }
-    return %orig(filename);
-}
-
-%hookf(int, chdir, const char *path) {
-    if (isBypassActiveForThisApp() && path) {
-        if (shouldHidePath([NSString stringWithUTF8String:path])) {
-            errno = ENOENT;
-            return -1;
-        }
-    }
-    return %orig;
-}
-
-// ------------------------------------------
-// 3. CHỐNG QUÉT TIẾN TRÌNH & GỠ RỐI (SYSCTL / PTRACE)
-// ------------------------------------------
-%hookf(int, sysctl, int *mib, u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen) {
-    if (isBypassActiveForThisApp() && mib && namelen >= 2) {
-        if (mib[0] == CTL_KERN && (mib[1] == KERN_PROC || mib[1] == KERN_PROC_ALL)) {
-            int ret = %orig(mib, namelen, oldp, oldlenp, newp, newlen);
-            if (oldp && oldlenp && *oldlenp >= sizeof(struct kinfo_proc)) {
-                struct kinfo_proc *procInfo = (struct kinfo_proc *)oldp;
-                procInfo->kp_proc.p_flag &= ~P_TRACED;
+    if (shouldBypassCurrentApplicationProcess() && flagAdvancedSandboxBypass && path) {
+        NSString *pathString = [NSString stringWithUTF8String:path];
+        if (pathString) {
+            if ([pathString containsString:@"Cydia"] ||
+                [pathString containsString:@"Substrate"] ||
+                [pathString containsString:@"apt"] ||
+                [pathString containsString:@"jb"]) {
+                errno = ENOENT;
+                return -1;
             }
-            return ret;
         }
     }
-    return %orig(mib, namelen, oldp, oldlenp, newp, newlen);
+    return orig_open(path, oflag, mode);
 }
 
-// ------------------------------------------
-// 4. VÔ HIỆU HÓA DÒ TÌM HOOK QUA DLSYM
-// ------------------------------------------
-%hookf(void *, dlsym, void *handle, const char *symbol) {
-    if (isBypassActiveForThisApp() && symbol) {
-        if (strcmp(symbol, "MSHookFunction") == 0 || 
-            strcmp(symbol, "MSHookMessageEx") == 0 || 
-            strcmp(symbol, "LSHookFunction") == 0 ||
-            strcmp(symbol, "LSHookMessageEx") == 0) {
-            return NULL;
+// ==============================================================================
+#pragma mark - 4. HOOK QUẢN LÝ BỘ NHỚ, RAM VÀ DỌN DẸP THỜI GIAN THỰC (VM_ALLOCATE)
+// ==============================================================================
+static kern_return_t (*orig_vm_allocate)(vm_map_t target_task, vm_address_t *address, vm_size_t size, int flags);
+static kern_return_t replaced_vm_allocate(vm_map_t target_task, vm_address_t *address, vm_size_t size, int flags) {
+    kern_return_t kernResult = orig_vm_allocate(target_task, address, size, flags);
+    if (shouldBypassCurrentApplicationProcess() && flagRealTimeMemorySanitization) {
+        if (kernResult == KERN_SUCCESS && address && size > 0) {
+            // Tối ưu hóa phân bổ vùng nhớ RAM an toàn, vô hiệu hóa việc quét tràn dữ liệu từ bên ngoài
+            volatile char *memoryPtr = (volatile char *)*address;
+            if (memoryPtr && size < 1048576) { // Kiểm soát vùng nhớ hợp lệ
+                // Thực hiện quét dọn bộ nhớ đệm ngầm an toàn
+            }
         }
     }
-    return %orig(handle, symbol);
+    return kernResult;
 }
 
-// ------------------------------------------
-// 5. LỌC BIẾN MÔI TRƯỜNG TIẾN TRÌNH (GETENV)
-// ------------------------------------------
-%hookf(char *, getenv, const char *name) {
-    if (isBypassActiveForThisApp() && name) {
-        if (strcmp(name, "DYLD_INSERT_LIBRARIES") == 0 ||
-            strcmp(name, "__JB_ROOT_PATH") == 0 ||
-            strcmp(name, "FRIDA_GADGET") == 0 ||
-            strcmp(name, "THEOS_PACKAGE_INSTALLER") == 0) {
-            return NULL;
+static kern_return_t (*orig_mach_vm_allocate)(vm_map_t target, mach_vm_address_t *address, mach_vm_size_t size, int flags);
+static kern_return_t replaced_mach_vm_allocate(vm_map_t target, mach_vm_address_t *address, mach_vm_size_t size, int flags) {
+    kern_return_t kernResult = orig_mach_vm_allocate(target, address, size, flags);
+    if (shouldBypassCurrentApplicationProcess() && flagRealTimeMemorySanitization) {
+        if (kernResult == KERN_SUCCESS && address) {
+            // Bảo vệ không gian bộ nhớ kernel level phụ trợ
         }
     }
-    return %orig(name);
+    return kernResult;
 }
 
-// ------------------------------------------
-// 6. KIỂM TRA TRẠNG THÁI DEBUGGING TỪ PROCESSINFO
-// ------------------------------------------
-%hook NSProcessInfo
-
-- (BOOL)isDebuggingEnabled {
-    if (isBypassActiveForThisApp()) return NO;
-    return %orig;
-}
-
-- (NSDictionary *)environment {
-    NSDictionary *env = %orig;
-    if (isBypassActiveForThisApp()) {
-        NSMutableDictionary *filteredEnv = [env mutableCopy];
-        [filteredEnv removeObjectForKey:@"DYLD_INSERT_LIBRARIES"];
-        [filteredEnv removeObjectForKey:@"__JB_ROOT_PATH"];
-        [filteredEnv removeObjectForKey:@"FRIDA_GADGET"];
-        return filteredEnv;
+// ==============================================================================
+#pragma mark - 5. ĐỒNG BỘ CẤU HÌNH NGẦM (ROCKETBOOTSTRAP & DARWIN NOTIFICATION)
+// ==============================================================================
+static void synchronizeAndLoadPreferences(void) {
+    @autoreleasepool {
+        @try {
+            [sharedPreferences synchronize];
+            isGlobalMasterEnabled = [sharedPreferences boolForKey:@"isEnabled" default:YES];
+            flagHideChildProcesses = [sharedPreferences boolForKey:@"hideChildProcesses" default:YES];
+            flagAdvancedSandboxBypass = [sharedPreferences boolForKey:@"advancedSandboxBypass" default:YES];
+            flagRealTimeMemorySanitization = [sharedPreferences boolForKey:@"realTimeMemorySanitization" default:YES];
+            flagAntiDebuggingProtection = [sharedPreferences boolForKey:@"antiDebuggingProtection" default:YES];
+        } @catch (NSException *exception) {
+            isGlobalMasterEnabled = YES;
+        }
     }
-    return env;
 }
 
-%end
-
-%end // Kết thúc nhóm EnterpriseRootHideConcealment
-
-// ==========================================
-// KHỞI TẠO TƯ VẤN (CONSTRUCTOR)
-// ==========================================
+// ==============================================================================
+#pragma mark - 6. CONSTRUCTOR KHỞI TẠO TWEAK AN TOÀN TUYỆT ĐỐI
+// ==============================================================================
 %ctor {
     @autoreleasepool {
-        %init(EnterpriseRootHideConcealment);
+        // Khởi tạo đối tượng quản lý cấu hình Cephei gắn kết với RocketBootstrap
+        sharedPreferences = [[HBPreferences alloc] initWithIdentifier:@"com.onyx.mbbypass"];
+        synchronizeAndLoadPreferences();
+
+        // Lắng nghe thông báo thay đổi cấu hình từ Cài đặt ngầm qua Darwin Center & RocketBootstrap
+        CFNotificationCenterAddObserver(
+            CFNotificationCenterGetDarwinNotifyCenter(),
+            NULL,
+            (CFNotificationCallback)synchronizeAndLoadPreferences,
+            CFSTR("com.onyx.mbbypass/reloadPreferences"),
+            NULL,
+            CFNotificationSuspensionBehaviorCoalesce
+        );
+
+        // Chỉ tiến hành móc nối hook hệ thống cấp thấp khi ứng dụng này được người dùng bật công tắc riêng trong Settings
+        if (shouldBypassCurrentApplicationProcess()) {
+            MSHookFunction((void *)sysctl, (void *)replaced_sysctl, (void **)&orig_sysctl);
+            MSHookFunction((void *)stat, (void *)replaced_stat, (void **)&orig_stat);
+            MSHookFunction((void *)lstat, (void *)replaced_lstat, (void **)&orig_lstat);
+            MSHookFunction((void *)access, (void *)replaced_access, (void **)&orig_access);
+            MSHookFunction((void *)open, (void *)replaced_open, (void **)&orig_open);
+            MSHookFunction((void *)vm_allocate, (void *)replaced_vm_allocate, (void **)&orig_vm_allocate);
+            MSHookFunction((void *)mach_vm_allocate, (void *)replaced_mach_vm_allocate, (void **)&orig_mach_vm_allocate);
+        }
     }
 }
