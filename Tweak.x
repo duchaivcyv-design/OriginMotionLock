@@ -11,57 +11,61 @@
 
 extern kern_return_t mach_vm_allocate(vm_map_t target, mach_vm_address_t *address, mach_vm_size_t size, int flags);
 
-// Hàm kiểm tra trạng thái kèm log chi tiết để debug
+// Hàm kiểm tra và lọc ứng dụng mục tiêu kèm trạng thái công tắc
 static BOOL shouldBypassCurrentApplicationProcess(void) {
     @autoreleasepool {
         @try {
             NSBundle *mainAppBundle = [NSBundle mainBundle];
             NSString *currentBundleIdentifier = [mainAppBundle bundleIdentifier];
             if (!currentBundleIdentifier) {
-                NSLog(@"[MBBypass] Không tìm thấy Bundle Identifier của tiến trình này.");
                 return NO;
             }
 
-            // Bỏ qua SpringBoard hoặc các tiến trình hệ thống không cần thiết
-            if ([currentBundleIdentifier isEqualToString:@"com.apple.springboard"]) {
+            // Danh sách toàn bộ các ứng dụng đã lấy từ ảnh của cậu
+            NSArray *targetApps = @[
+                @"com.garena.game.fcmobilevn", // FC Mobile[span_6](start_span)[span_6](end_span)
+                @"com.dts.freefireth",        // Free Fire[span_7](start_span)[span_7](end_span)
+                @"vn.com.techcombank.bb.app", // Techcombank[span_8](start_span)[span_8](end_span)[span_9](start_span)[span_9](end_span)
+                @"com.mbmobile",             // MB Bank[span_10](start_span)[span_10](end_span)
+                @"vn.com.vng.zalopay",       // ZaloPay[span_11](start_span)[span_11](end_span)
+                @"com.fpt.tpb.emobile"       // TPBank Mobile
+            ];
+
+            // Nếu app hiện tại không nằm trong danh sách thì bỏ qua, không can thiệp
+            if (![targetApps containsObject:currentBundleIdentifier]) {
                 return NO;
             }
 
             CFStringRef applicationID = CFSTR("com.onyx.mbbypass");
-            
-            // Ép buộc đồng bộ dữ liệu cấu hình từ ổ đĩa
             CFPreferencesAppSynchronize(applicationID);
 
             // 1. Kiểm tra công tắc tổng (isEnabled)
             Boolean keyExistsAndValid = false;
             Boolean masterEnabled = CFPreferencesGetAppBooleanValue(CFSTR("isEnabled"), applicationID, &keyExistsAndValid);
             if (keyExistsAndValid && !masterEnabled) {
-                NSLog(@"[MBBypass] Công tắc tổng đang TẮT cho mọi app.");
                 return NO;
             }
 
-            // 2. Kiểm tra công tắc riêng biệt của ứng dụng hiện tại
+            // 2. Kiểm tra công tắc riêng biệt của ứng dụng trong Cài đặt
             NSString *preferenceKey = [NSString stringWithFormat:@"enabled_%@", currentBundleIdentifier];
             CFStringRef prefKeyRef = (__bridge CFStringRef)preferenceKey;
             
             Boolean appSpecificEnabled = CFPreferencesGetAppBooleanValue(prefKeyRef, applicationID, &keyExistsAndValid);
-            
-            NSLog(@"[MBBypass] App: %@ | Trạng thái bật: %d (Tồn tại key: %d)", currentBundleIdentifier, appSpecificEnabled, keyExistsAndValid);
 
-            if (keyExistsAndValid && appSpecificEnabled) {
-                return YES;
+            // Nếu người dùng chưa từng gạt công tắc lần nào, mặc định bật (YES) cho app này
+            if (!keyExistsAndValid) {
+                return YES; 
             }
 
-            return NO;
+            return appSpecificEnabled ? YES : NO;
         } @catch (NSException *exception) {
-            NSLog(@"[MBBypass] Lỗi ngoại lệ trong shouldBypass: %@", exception);
             return NO;
         }
     }
 }
 
 // ==============================================================================
-#pragma mark - HOOK HỆ THỐNG CẤP THẤP
+#pragma mark - HOOK HỆ THỐNG CẤP THẤP CHẶN QUÉT JAILBREAK
 // ==============================================================================
 static int (*orig_sysctl)(int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen);
 static int replaced_sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen) {
@@ -155,7 +159,7 @@ static int replaced_open(const char *path, int oflag, ...) {
         if (pathString) {
             if ([pathString containsString:@"Cydia"] ||
                 [pathString containsString:@"Substrate"] ||
-                [pathString containsString:@"apt"] ||
+                [pathString containsString:`apt`] ||
                 [pathString containsString:@"jb"]) {
                 errno = ENOENT;
                 return -1;
@@ -176,13 +180,11 @@ static kern_return_t replaced_mach_vm_allocate(vm_map_t target, mach_vm_address_
 }
 
 // ==============================================================================
-#pragma mark - CONSTRUCTOR KHỞI TẠO
+#pragma mark - CONSTRUCTOR KHỞI TẠO TƯ VẤN HOOK
 // ==============================================================================
 __attribute__((constructor)) static void custom_ctor(void) {
     @autoreleasepool {
-        NSLog(@"[MBBypass] Constructor được gọi trong tiến trình: %s", getprogname());
         if (shouldBypassCurrentApplicationProcess()) {
-            NSLog(@"[MBBypass] Đã kích hoạt các hook thành công cho tiến trình này!");
             MSHookFunction((void *)sysctl, (void *)replaced_sysctl, (void **)&orig_sysctl);
             MSHookFunction((void *)stat, (void *)replaced_stat, (void **)&orig_stat);
             MSHookFunction((void *)lstat, (void *)replaced_lstat, (void **)&orig_lstat);
@@ -190,8 +192,6 @@ __attribute__((constructor)) static void custom_ctor(void) {
             MSHookFunction((void *)open, (void *)replaced_open, (void **)&orig_open);
             MSHookFunction((void *)vm_allocate, (void *)replaced_vm_allocate, (void **)&orig_vm_allocate);
             MSHookFunction((void *)mach_vm_allocate, (void *)replaced_mach_vm_allocate, (void **)&orig_mach_vm_allocate);
-        } else {
-            NSLog(@"[MBBypass] Bỏ qua hook do không thỏa mãn điều kiện cấu hình.");
         }
     }
 }
