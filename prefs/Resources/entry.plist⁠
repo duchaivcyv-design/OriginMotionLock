@@ -4,9 +4,16 @@
 <dict>
 	<key>entry</key>
 	<dict>
-		<cell>PSLinkCell</cell>
-		<label>MBBypass</label>
-		<icon>icon.png</icon>
+		<key>bundle</key>
+		<string>MBBypassPrefs</string> <!-- Phải khớp với tên bundle của tweak -->
+		<key>cell</key>
+		<string>PSSwitchCell</string> <!-- Hoặc PSTableCell tùy cấu hình -->
+		<key>detail</key>
+		<string>MBBypassRootListController</string>
+		<key>icon</key>
+		<string>icon.png</string>
+		<key>label</key>
+		<string>MBBypass</string> <!-- Tên hiển thị ngoài màn hình chính của Cài đặt -->
 	</dict>
 </dict>
 </plist>
