@@ -27,8 +27,6 @@
 			<key>PostNotification</key>
 			<string>com.onyx.mbbypass/reloadPrefs</string>
 		</dict>
-
-		<!-- Nhóm thông tin hướng dẫn -->
 		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
