@@ -1,4 +1,4 @@
-#import <Cephei/HBPreferences.h>
+#import <Foundation/Foundation.h>
 #import <substrate.h>
 #import <dlfcn.h>
 #import <sys/sysctl.h>
@@ -8,33 +8,36 @@
 #import <mach/vm_map.h>
 #import <objc/runtime.h>
 #import <fcntl.h>
-#import <pthread.h>
 
-// Khai báo nguyên mẫu hàm mach_vm_allocate cấp thấp để tránh lỗi biên dịch
 extern kern_return_t mach_vm_allocate(vm_map_t target, mach_vm_address_t *address, mach_vm_size_t size, int flags);
 
-// ==============================================================================
-// 1. KHAI BÁO CẤU TRÚC, BIẾN TOÀN CỤC VÀ QUẢN LÝ HỆ THỐNG CẤP THẤP
-// ==============================================================================
-static HBPreferences *sharedPreferences = nil;
-static BOOL isGlobalMasterEnabled = YES;
-static BOOL flagHideChildProcesses = YES;
-static BOOL flagAdvancedSandboxBypass = YES;
-static BOOL flagRealTimeMemorySanitization = YES;
-static BOOL flagAntiDebuggingProtection = YES;
-
-// Hàm kiểm tra trạng thái độc lập: Chỉ kích hoạt khi Master bật VÀ app hiện tại có công tắc riêng được bật trong Settings
+// Hàm kiểm tra trạng thái độc lập qua CFPreferences (bỏ qua rào cản Sandbox)
 static BOOL shouldBypassCurrentApplicationProcess(void) {
     @autoreleasepool {
         @try {
-            if (!isGlobalMasterEnabled) return NO;
-
             NSBundle *mainAppBundle = [NSBundle mainBundle];
             NSString *currentBundleIdentifier = [mainAppBundle bundleIdentifier];
             if (!currentBundleIdentifier) return NO;
 
+            CFStringRef applicationID = CFSTR("com.onyx.mbbypass");
+            
+            // 1. Kiểm tra công tắc tổng (isEnabled)
+            Boolean keyExistsAndValid = false;
+            Boolean masterEnabled = CFPreferencesGetAppBooleanValue(CFSTR("isEnabled"), applicationID, &keyExistsAndValid);
+            if (keyExistsAndValid && !masterEnabled) {
+                return NO;
+            }
+
+            // 2. Kiểm tra công tắc riêng biệt của từng ứng dụng (enabled_<BundleID>)
             NSString *preferenceKey = [NSString stringWithFormat:@"enabled_%@", currentBundleIdentifier];
-            return [sharedPreferences boolForKey:preferenceKey default:NO];
+            CFStringRef prefKeyRef = (__bridge CFStringRef)preferenceKey;
+            
+            Boolean appSpecificEnabled = CFPreferencesGetAppBooleanValue(prefKeyRef, applicationID, &keyExistsAndValid);
+            if (keyExistsAndValid && appSpecificEnabled) {
+                return YES;
+            }
+
+            return NO;
         } @catch (NSException *exception) {
             return NO;
         }
@@ -42,11 +45,11 @@ static BOOL shouldBypassCurrentApplicationProcess(void) {
 }
 
 // ==============================================================================
-#pragma mark - 2. HOOK HỆ THỐNG CẤP THẤP: CHẶN SYSCTL & ẨN TIẾN TRÌNH CON
+#pragma mark - HOOK HỆ THỐNG CẤP THẤP
 // ==============================================================================
 static int (*orig_sysctl)(int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen);
 static int replaced_sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen) {
-    if (shouldBypassCurrentApplicationProcess() && flagHideChildProcesses) {
+    if (shouldBypassCurrentApplicationProcess()) {
         if (namelen >= 2 && name[0] == CTL_KERN && name[1] == KERN_PROC) {
             int result = orig_sysctl(name, namelen, oldp, oldlenp, newp, newlen);
             if (result == 0 && oldp && oldlenp) {
@@ -61,12 +64,9 @@ static int replaced_sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp
     return orig_sysctl(name, namelen, oldp, oldlenp, newp, newlen);
 }
 
-// ==============================================================================
-#pragma mark - 3. HOOK KIỂM TRA ĐƯỜNG DẪN TỆP TIN & SANDBOX (STAT, LSTAT, ACCESS, OPEN)
-// ==============================================================================
 static int (*orig_stat)(const char *path, struct stat *buf);
 static int replaced_stat(const char *path, struct stat *buf) {
-    if (shouldBypassCurrentApplicationProcess() && flagAdvancedSandboxBypass && path) {
+    if (shouldBypassCurrentApplicationProcess() && path) {
         NSString *pathString = [NSString stringWithUTF8String:path];
         if (pathString) {
             if ([pathString containsString:@"Cydia.app"] ||
@@ -89,7 +89,7 @@ static int replaced_stat(const char *path, struct stat *buf) {
 
 static int (*orig_lstat)(const char *path, struct stat *buf);
 static int replaced_lstat(const char *path, struct stat *buf) {
-    if (shouldBypassCurrentApplicationProcess() && flagAdvancedSandboxBypass && path) {
+    if (shouldBypassCurrentApplicationProcess() && path) {
         NSString *pathString = [NSString stringWithUTF8String:path];
         if (pathString) {
             if ([pathString containsString:@"Cydia"] ||
@@ -107,7 +107,7 @@ static int replaced_lstat(const char *path, struct stat *buf) {
 
 static int (*orig_access)(const char *path, int amode);
 static int replaced_access(const char *path, int amode) {
-    if (shouldBypassCurrentApplicationProcess() && flagAdvancedSandboxBypass && path) {
+    if (shouldBypassCurrentApplicationProcess() && path) {
         NSString *pathString = [NSString stringWithUTF8String:path];
         if (pathString) {
             if ([pathString containsString:@"Cydia"] ||
@@ -134,7 +134,7 @@ static int replaced_open(const char *path, int oflag, ...) {
     }
     va_end(args);
 
-    if (shouldBypassCurrentApplicationProcess() && flagAdvancedSandboxBypass && path) {
+    if (shouldBypassCurrentApplicationProcess() && path) {
         NSString *pathString = [NSString stringWithUTF8String:path];
         if (pathString) {
             if ([pathString containsString:@"Cydia"] ||
@@ -149,65 +149,21 @@ static int replaced_open(const char *path, int oflag, ...) {
     return orig_open(path, oflag, mode);
 }
 
-// ==============================================================================
-#pragma mark - 4. HOOK QUẢN LÝ BỘ NHỚ VÀ RAM (VM_ALLOCATE & MACH_VM_ALLOCATE)
-// ==============================================================================
 static kern_return_t (*orig_vm_allocate)(vm_map_t target_task, vm_address_t *address, vm_size_t size, int flags);
 static kern_return_t replaced_vm_allocate(vm_map_t target_task, vm_address_t *address, vm_size_t size, int flags) {
-    kern_return_t kernResult = orig_vm_allocate(target_task, address, size, flags);
-    if (shouldBypassCurrentApplicationProcess() && flagRealTimeMemorySanitization) {
-        if (kernResult == KERN_SUCCESS && address && size > 0) {
-            // Xử lý bộ nhớ an toàn
-        }
-    }
-    return kernResult;
+    return orig_vm_allocate(target_task, address, size, flags);
 }
 
 static kern_return_t (*orig_mach_vm_allocate)(vm_map_t target, mach_vm_address_t *address, mach_vm_size_t size, int flags);
 static kern_return_t replaced_mach_vm_allocate(vm_map_t target, mach_vm_address_t *address, mach_vm_size_t size, int flags) {
-    kern_return_t kernResult = orig_mach_vm_allocate(target, address, size, flags);
-    if (shouldBypassCurrentApplicationProcess() && flagRealTimeMemorySanitization) {
-        if (kernResult == KERN_SUCCESS && address) {
-            // Xử lý bộ nhớ mach_vm an toàn
-        }
-    }
-    return kernResult;
+    return orig_mach_vm_allocate(target, address, size, flags);
 }
 
 // ==============================================================================
-#pragma mark - 5. ĐỒNG BỘ CẤU HÌNH NGẦM
+#pragma mark - CONSTRUCTOR KHỞI TẠO (THAY THẾ %ctor)
 // ==============================================================================
-static void synchronizeAndLoadPreferences(void) {
+__attribute__((constructor)) static void custom_ctor(void) {
     @autoreleasepool {
-        @try {
-            isGlobalMasterEnabled = [sharedPreferences boolForKey:@"isEnabled" default:YES];
-            flagHideChildProcesses = [sharedPreferences boolForKey:@"hideChildProcesses" default:YES];
-            flagAdvancedSandboxBypass = [sharedPreferences boolForKey:@"advancedSandboxBypass" default:YES];
-            flagRealTimeMemorySanitization = [sharedPreferences boolForKey:@"realTimeMemorySanitization" default:YES];
-            flagAntiDebuggingProtection = [sharedPreferences boolForKey:@"antiDebuggingProtection" default:YES];
-        } @catch (NSException *exception) {
-            isGlobalMasterEnabled = YES;
-        }
-    }
-}
-
-// ==============================================================================
-#pragma mark - 6. CONSTRUCTOR KHỞI TẠO TWEAK
-// ==============================================================================
-%ctor {
-    @autoreleasepool {
-        sharedPreferences = [[HBPreferences alloc] initWithIdentifier:@"com.onyx.mbbypass"];
-        synchronizeAndLoadPreferences();
-
-        CFNotificationCenterAddObserver(
-            CFNotificationCenterGetDarwinNotifyCenter(),
-            NULL,
-            (CFNotificationCallback)synchronizeAndLoadPreferences,
-            CFSTR("com.onyx.mbbypass/reloadPreferences"),
-            NULL,
-            CFNotificationSuspensionBehaviorCoalesce
-        );
-
         if (shouldBypassCurrentApplicationProcess()) {
             MSHookFunction((void *)sysctl, (void *)replaced_sysctl, (void **)&orig_sysctl);
             MSHookFunction((void *)stat, (void *)replaced_stat, (void **)&orig_stat);
