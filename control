@@ -1,9 +1,9 @@
 Package: com.onyx.mbbypass
 Name: MBBypass
-Version: 1.0.0-Debug
+Author: Onyx
+Description: Tweak bypass bảo mật cực mạnh với giao diện quản lý thông minh.
 Architecture: iphoneos-arm64
-Description: Tweak bypass jailbreak cho ứng dụng và game
-Maintainer: duchaicvcv-design
-Author: duchaicvcv-design
+Depends: mobilesubstrate, ws.hbang.common (>= 1.16), rocketbootstrap (>= 1.0.10)
+Maintainer: Onyx
 Section: Tweaks
-Depends: mobilesubstrate, firmware (>= 14.0)
+Version: 1.1.0-Debug
