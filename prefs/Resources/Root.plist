@@ -30,12 +30,12 @@
 			<key>cell</key>
 			<string>PSGroupCell</string>
 			<key>label</key>
-			<string>Hướng dẫn sử dụng</string>
+			<string>Quản lý ứng dụng</string>
 			<key>footerText</key>
-			<string>Bên dưới là danh sách các ứng dụng được quét tự động trong máy. Mặc định tất cả đều ở trạng thái TẮT. Chỉ khi nào cậu gạt bật ứng dụng nào, tweak mới tiến hành ẩn Jailbreak trên ứng dụng đó.</string>
+			<string>Hệ thống sẽ tự động quét toàn bộ ứng dụng trong máy và chia thành các mục bên dưới. Mặc định tất cả đều TẮT, cậu muốn ẩn app nào thì gạt bật app đó.</string>
 		</dict>
 	</array>
 	<key>title</key>
-	<string>MBBypass - Ẩn Jailbreak</string>
+	<string>MBBypass</string>
 </dict>
 </plist>
