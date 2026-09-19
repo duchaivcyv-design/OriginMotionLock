@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Công tắc tổng kích hoạt cơ chế ẩn sandbox -->
+    <key>isEnabled</key>
+    <true/>
+    
+    <!-- Cấu hình nâng cao: Buộc ẩn tiến trình con và chống gỡ rối -->
+    <key>hideChildProcesses</key>
+    <true/>
+    
+    <!-- Cấu hình bật/tắt riêng cho từng ứng dụng ngân hàng cụ thể -->
+    <key>enabled_vn.com.techcombank.mb.consumer</key>
+    <true/>
+    <key>enabled_com.vietcombank.mobilebanking</key>
+    <true/>
+</dict>
+</plist>
