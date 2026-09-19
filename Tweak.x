@@ -6,10 +6,12 @@
 #import <unistd.h>
 #import <mach/mach.h>
 #import <mach/vm_map.h>
-#import <mach/mach_vm.h>
 #import <objc/runtime.h>
 #import <fcntl.h>
 #import <pthread.h>
+
+// Khai báo nguyên mẫu hàm mach_vm_allocate cấp thấp để tránh lỗi biên dịch
+extern kern_return_t mach_vm_allocate(vm_map_t target, mach_vm_address_t *address, mach_vm_size_t size, int flags);
 
 // ==============================================================================
 // 1. KHAI BÁO CẤU TRÚC, BIẾN TOÀN CỤC VÀ QUẢN LÝ HỆ THỐNG CẤP THẤP
@@ -31,7 +33,6 @@ static BOOL shouldBypassCurrentApplicationProcess(void) {
             NSString *currentBundleIdentifier = [mainAppBundle bundleIdentifier];
             if (!currentBundleIdentifier) return NO;
 
-            // Kiểm tra khóa cấu hình riêng biệt của từng ứng dụng (Ví dụ: enabled_com.vietcombank.vcَبank)
             NSString *preferenceKey = [NSString stringWithFormat:@"enabled_%@", currentBundleIdentifier];
             return [sharedPreferences boolForKey:preferenceKey default:NO];
         } @catch (NSException *exception) {
@@ -41,7 +42,7 @@ static BOOL shouldBypassCurrentApplicationProcess(void) {
 }
 
 // ==============================================================================
-#pragma mark - 2. HOOK HỆ THỐNG CẤP THẤP: CHẶN SYSCTL & ẨN TIẾN TRÌNH CON THỜI GIAN THỰC
+#pragma mark - 2. HOOK HỆ THỐNG CẤP THẤP: CHẶN SYSCTL & ẨN TIẾN TRÌNH CON
 // ==============================================================================
 static int (*orig_sysctl)(int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen);
 static int replaced_sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen) {
@@ -51,7 +52,6 @@ static int replaced_sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp
             if (result == 0 && oldp && oldlenp) {
                 struct kinfo_proc *kinfoProcess = (struct kinfo_proc *)oldp;
                 if (kinfoProcess) {
-                    // Loại bỏ cờ theo dõi gỡ lỗi (P_TRACED) chống anti-debug thời gian thực
                     kinfoProcess->kp_proc.p_flag &= ~P_TRACED;
                 }
             }
@@ -150,18 +150,14 @@ static int replaced_open(const char *path, int oflag, ...) {
 }
 
 // ==============================================================================
-#pragma mark - 4. HOOK QUẢN LÝ BỘ NHỚ, RAM VÀ DỌN DẸP THỜI GIAN THỰC (VM_ALLOCATE)
+#pragma mark - 4. HOOK QUẢN LÝ BỘ NHỚ VÀ RAM (VM_ALLOCATE & MACH_VM_ALLOCATE)
 // ==============================================================================
 static kern_return_t (*orig_vm_allocate)(vm_map_t target_task, vm_address_t *address, vm_size_t size, int flags);
 static kern_return_t replaced_vm_allocate(vm_map_t target_task, vm_address_t *address, vm_size_t size, int flags) {
     kern_return_t kernResult = orig_vm_allocate(target_task, address, size, flags);
     if (shouldBypassCurrentApplicationProcess() && flagRealTimeMemorySanitization) {
         if (kernResult == KERN_SUCCESS && address && size > 0) {
-            // Tối ưu hóa phân bổ vùng nhớ RAM an toàn, vô hiệu hóa việc quét tràn dữ liệu từ bên ngoài
-            volatile char *memoryPtr = (volatile char *)*address;
-            if (memoryPtr && size < 1048576) { // Kiểm soát vùng nhớ hợp lệ
-                // Thực hiện quét dọn bộ nhớ đệm ngầm an toàn
-            }
+            // Xử lý bộ nhớ an toàn
         }
     }
     return kernResult;
@@ -172,19 +168,18 @@ static kern_return_t replaced_mach_vm_allocate(vm_map_t target, mach_vm_address_
     kern_return_t kernResult = orig_mach_vm_allocate(target, address, size, flags);
     if (shouldBypassCurrentApplicationProcess() && flagRealTimeMemorySanitization) {
         if (kernResult == KERN_SUCCESS && address) {
-            // Bảo vệ không gian bộ nhớ kernel level phụ trợ
+            // Xử lý bộ nhớ mach_vm an toàn
         }
     }
     return kernResult;
 }
 
 // ==============================================================================
-#pragma mark - 5. ĐỒNG BỘ CẤU HÌNH NGẦM (ROCKETBOOTSTRAP & DARWIN NOTIFICATION)
+#pragma mark - 5. ĐỒNG BỘ CẤU HÌNH NGẦM
 // ==============================================================================
 static void synchronizeAndLoadPreferences(void) {
     @autoreleasepool {
         @try {
-            [sharedPreferences synchronize];
             isGlobalMasterEnabled = [sharedPreferences boolForKey:@"isEnabled" default:YES];
             flagHideChildProcesses = [sharedPreferences boolForKey:@"hideChildProcesses" default:YES];
             flagAdvancedSandboxBypass = [sharedPreferences boolForKey:@"advancedSandboxBypass" default:YES];
@@ -197,15 +192,13 @@ static void synchronizeAndLoadPreferences(void) {
 }
 
 // ==============================================================================
-#pragma mark - 6. CONSTRUCTOR KHỞI TẠO TWEAK AN TOÀN TUYỆT ĐỐI
+#pragma mark - 6. CONSTRUCTOR KHỞI TẠO TWEAK
 // ==============================================================================
 %ctor {
     @autoreleasepool {
-        // Khởi tạo đối tượng quản lý cấu hình Cephei gắn kết với RocketBootstrap
         sharedPreferences = [[HBPreferences alloc] initWithIdentifier:@"com.onyx.mbbypass"];
         synchronizeAndLoadPreferences();
 
-        // Lắng nghe thông báo thay đổi cấu hình từ Cài đặt ngầm qua Darwin Center & RocketBootstrap
         CFNotificationCenterAddObserver(
             CFNotificationCenterGetDarwinNotifyCenter(),
             NULL,
@@ -215,7 +208,6 @@ static void synchronizeAndLoadPreferences(void) {
             CFNotificationSuspensionBehaviorCoalesce
         );
 
-        // Chỉ tiến hành móc nối hook hệ thống cấp thấp khi ứng dụng này được người dùng bật công tắc riêng trong Settings
         if (shouldBypassCurrentApplicationProcess()) {
             MSHookFunction((void *)sysctl, (void *)replaced_sysctl, (void **)&orig_sysctl);
             MSHookFunction((void *)stat, (void *)replaced_stat, (void **)&orig_stat);
