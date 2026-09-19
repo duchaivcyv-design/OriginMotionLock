@@ -56,13 +56,12 @@ BOOL shouldHidePath(NSString *pathString) {
         }
     }
     
-    // Các đường dẫn hệ thống jailbreak cụ thể (đã sửa chuẩn cú pháp chuỗi Objective-C)
+    // Các đường dẫn hệ thống jailbreak cụ thể (đã bọc ngoặc kép đầy đủ)
     NSArray *restrictedPaths = @[
         @"/Applications/Cydia.app",
         @"/Applications/Sileo.app",
         @"/Applications/Zebra.app",
         @"/Applications/Filza.app",
-        @/Library/MobileSubstrate", // Đã sửa cú pháp chuẩn dưới đây
         @"/Library/MobileSubstrate",
         @"/usr/lib/libsubstitute.dylib",
         @"/usr/lib/substrate",
