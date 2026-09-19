@@ -2,19 +2,11 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>entry</key>
-	<dict>
-		<cell>PSSwitchCell</cell>
-		<default>1</default>
-		<defaults>com.onyx.mbbypass</defaults>
-		<key>bundle</key>
-		<string>MBBypassPrefs</string>
-		<key>cellClass</key>
-		<string>HBLinkTableCell</string>
-		<key>icon</key>
-		<string>icon.png</string>
-		<key>label</key>
-		<string>MBBypass</string>
-	</dict>
+	<key>items</key>
+	<array>
+		<!-- Danh sách sẽ được load tự động từ MBBypassRootListController.m -->
+	</array>
+	<key>title</key>
+	<string>MBBypass</string>
 </dict>
 </plist>
