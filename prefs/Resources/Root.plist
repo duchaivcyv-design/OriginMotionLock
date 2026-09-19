@@ -4,218 +4,55 @@
 <dict>
     <key>items</key>
     <array>
+        <!-- Nhóm Cài đặt chung -->
         <dict>
             <key>cell</key>
             <string>PSGroupCell</string>
             <key>label</key>
-            <string>Hệ thống ẩn Sandbox &amp; Chống gỡ rối</string>
+            <string>Cấu hình chung MBBypass</string>
         </dict>
+        
+        <!-- Công tắc Tổng: Liên kết với key 'isEnabled' trong tệp com.onyx.mbbypass.plist -->
         <dict>
             <key>cell</key>
             <string>PSSwitchCell</string>
             <key>default</key>
             <true/>
             <key>defaults</key>
-            <string>com.onyx.mbbypass</string>
+            <string>com.onyx.mbbypass</string> <!-- Trỏ đúng tên domain gốc -->
             <key>key</key>
             <string>isEnabled</string>
             <key>label</key>
-            <string>Kích hoạt tổng</string>
+            <string>Kích hoạt Tweak</string>
+            <key>postNotification</key>
+            <string>com.onyx.mbbypass/reloadPreferences</string>
         </dict>
-        <dict>
-            <key>cell</key>
-            <string>PSSwitchCell</string>
-            <key>default</key>
-            <true/>
-            <key>defaults</key>
-            <string>com.onyx.mbbypass</string>
-            <key>key</key>
-            <string>hideChildProcesses</string>
-            <key>label</key>
-            <string>Ẩn tiến trình con &amp; Anti-Debug</string>
-        </dict>
+
+        <!-- Nhóm ứng dụng -->
         <dict>
             <key>cell</key>
             <string>PSGroupCell</string>
             <key>label</key>
-            <string>Ngân hàng &amp; Tài chính</string>
+            <string>Bỏ qua Jailbreak cho ứng dụng</string>
         </dict>
+
+        <!-- Công tắc App: Liên kết với key 'enabled_com.mbmobile' trong tệp gốc -->
         <dict>
             <key>cell</key>
             <string>PSSwitchCell</string>
             <key>default</key>
             <true/>
             <key>defaults</key>
-            <string>com.onyx.mbbypass</string>
-            <key>key</key>
-            <string>enabled_com.vietcombank.mobilebanking</string>
-            <key>label</key>
-            <string>Vietcombank</string>
-        </dict>
-        <dict>
-            <key>cell</key>
-            <string>PSSwitchCell</string>
-            <key>default</key>
-            <true/>
-            <key>defaults</key>
-            <string>com.onyx.mbbypass</string>
-            <key>key</key>
-            <string>enabled_vn.com.techcombank.mb.consumer</string>
-            <key>label</key>
-            <string>Techcombank</string>
-        </dict>
-        <dict>
-            <key>cell</key>
-            <string>PSSwitchCell</string>
-            <key>default</key>
-            <true/>
-            <key>defaults</key>
-            <string>com.onyx.mbbypass</string>
-            <key>key</key>
-            <string>enabled_com.bidv.SmartBanking</string>
-            <key>label</key>
-            <string>BIDV SmartBanking</string>
-        </dict>
-        <dict>
-            <key>cell</key>
-            <string>PSSwitchCell</string>
-            <key>default</key>
-            <true/>
-            <key>defaults</key>
-            <string>com.onyx.mbbypass</string>
-            <key>key</key>
-            <string>enabled_com.vietinbank.mobile</string>
-            <key>label</key>
-            <string>VietinBank iPay</string>
-        </dict>
-        <dict>
-            <key>cell</key>
-            <string>PSSwitchCell</string>
-            <key>default</key>
-            <true/>
-            <key>defaults</key>
-            <string>com.onyx.mbbypass</string>
+            <string>com.onyx.mbbypass</string> <!-- Trỏ đúng tên domain gốc -->
             <key>key</key>
             <string>enabled_com.mbmobile</string>
             <key>label</key>
             <string>MB Bank</string>
-        </dict>
-        <dict>
-            <key>cell</key>
-            <string>PSSwitchCell</string>
-            <key>default</key>
-            <true/>
-            <key>defaults</key>
-            <string>com.onyx.mbbypass</string>
-            <key>key</key>
-            <string>enabled_com.acb.mobileapp</string>
-            <key>label</key>
-            <string>ACB ONE</string>
-        </dict>
-        <dict>
-            <key>cell</key>
-            <string>PSSwitchCell</string>
-            <key>default</key>
-            <true/>
-            <key>defaults</key>
-            <string>com.onyx.mbbypass</string>
-            <key>key</key>
-            <string>enabled_com.vpbank.online</string>
-            <key>label</key>
-            <string>VPBank NEO</string>
-        </dict>
-        <dict>
-            <key>cell</key>
-            <string>PSSwitchCell</string>
-            <key>default</key>
-            <true/>
-            <key>defaults</key>
-            <string>com.onyx.mbbypass</string>
-            <key>key</key>
-            <string>enabled_com.tpb.mobilebanking</string>
-            <key>label</key>
-            <string>TPBank Mobile</string>
-        </dict>
-        <dict>
-            <key>cell</key>
-            <string>PSSwitchCell</string>
-            <key>default</key>
-            <true/>
-            <key>defaults</key>
-            <string>com.onyx.mbbypass</string>
-            <key>key</key>
-            <string>enabled_com.sacombank.mobilebanking</string>
-            <key>label</key>
-            <string>Sacombank Pay</string>
-        </dict>
-        <dict>
-            <key>cell</key>
-            <string>PSSwitchCell</string>
-            <key>default</key>
-            <true/>
-            <key>defaults</key>
-            <string>com.onyx.mbbypass</string>
-            <key>key</key>
-            <string>enabled_com.vnpay.agribank</string>
-            <key>label</key>
-            <string>Agribank E-Mobile</string>
-        </dict>
-        <dict>
-            <key>cell</key>
-            <string>PSGroupCell</string>
-            <key>label</key>
-            <string>Ví điện tử &amp; Game bảo mật cao</string>
-        </dict>
-        <dict>
-            <key>cell</key>
-            <string>PSSwitchCell</string>
-            <key>default</key>
-            <true/>
-            <key>defaults</key>
-            <string>com.onyx.mbbypass</string>
-            <key>key</key>
-            <string>enabled_com.vng.zalopay</string>
-            <key>label</key>
-            <string>ZaloPay</string>
-        </dict>
-        <dict>
-            <key>cell</key>
-            <string>PSSwitchCell</string>
-            <key>default</key>
-            <true/>
-            <key>defaults</key>
-            <string>com.onyx.mbbypass</string>
-            <key>key</key>
-            <string>enabled_com.momo.payment</string>
-            <key>label</key>
-            <string>MoMo</string>
-        </dict>
-        <dict>
-            <key>cell</key>
-            <string>PSSwitchCell</string>
-            <key>default</key>
-            <true/>
-            <key>defaults</key>
-            <string>com.onyx.mbbypass</string>
-            <key>key</key>
-            <string>enabled_com.vng.pubgmobile</string>
-            <key>label</key>
-            <string>PUBG Mobile</string>
-        </dict>
-        <dict>
-            <key>cell</key>
-            <string>PSSwitchCell</string>
-            <key>default</key>
-            <true/>
-            <key>defaults</key>
-            <string>com.onyx.mbbypass</string>
-            <key>key</key>
-            <string>enabled_com.HoYoverse.GenshinImpact</string>
-            <key>label</key>
-            <string>Genshin Impact</string>
+            <key>postNotification</key>
+            <string>com.onyx.mbbypass/reloadPreferences</string>
         </dict>
     </array>
     <key>title</key>
-    <string>MBBypass Manager</string>
+    <string>MBBypass</string>
 </dict>
 </plist>
