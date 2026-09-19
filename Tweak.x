@@ -228,12 +228,13 @@ BOOL shouldHidePath(NSString *pathString) {
 
 %end
 
-// 6. Bổ sung hook chuyên sâu chống quét phát hiện Hooking (Mã lỗi 3)
+%end // <--- Đã đóng nhóm %group MBBypassAdvancedHooks thành công
+
+// Khởi tạo tiến trình
 %ctor {
     @autoreleasepool {
         NSString *processName = [[NSProcessInfo processInfo] processName];
         if (![processName isEqualToString:@"SpringBoard"] && ![processName isEqualToString:@"Preferences"]) {
-            // Chạy nhóm hook nâng cao
             %init(MBBypassAdvancedHooks);
         }
     }
