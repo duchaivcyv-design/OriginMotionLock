@@ -33,7 +33,6 @@
                 id workspace = [LSWorkspace performSelector:@selector(defaultWorkspace)];
                 NSArray *installedApps = [workspace performSelector:@selector(allInstalledApplications)];
                 
-                // Sắp xếp danh sách ứng dụng theo tên A-Z để dễ theo dõi
                 NSArray *sortedApps = [installedApps sortedArrayUsingComparator:^NSComparisonResult(id app1, id app2) {
                     NSString *name1 = [app1 performSelector:@selector(localizedName)];
                     NSString *name2 = [app2 performSelector:@selector(localizedName)];
@@ -58,8 +57,6 @@
                         bundleURL = [app performSelector:@selector(bundleURL)];
 
                     NSString *path = [bundleURL path];
-                    
-                    // Lọc chuẩn xác để chỉ lấy ứng dụng người dùng, loại bỏ app hệ thống ngầm
                     BOOL isSystem = NO;
                     if ([app respondsToSelector:@selector(isSystemApplication)]) {
                         isSystem = [[app performSelector:@selector(isSystemApplication)] boolValue];
@@ -108,7 +105,6 @@
             NSLog(@"[MBBypass] Scan error: %@", exception);
         }
 
-        // Thêm các nhóm vào giao diện Cài đặt
         if ([bankApps count] > 0) {
             PSSpecifier *groupBank = [PSSpecifier preferenceSpecifierNamed:@"Ngân hàng & Tài chính" target:self set:nil get:nil detail:Nil cell:PSGroupCell edit:Nil];
             [_specifiers addObject:groupBank];
@@ -161,7 +157,6 @@
     }
     [dict setObject:value forKey:[specifier propertyForKey:@"key"]];
     
-    // Ghi file theo định dạng XML chuẩn để đọc toàn bộ dữ liệu không bị lỗi
     NSData *xmlData = [NSPropertyListSerialization dataWithPropertyList:dict format:NSPropertyListXMLFormat_v1_0 options:0 error:nil];
     if (xmlData) {
         [xmlData writeToFile:path atomically:YES];
