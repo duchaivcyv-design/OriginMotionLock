@@ -17,8 +17,8 @@ RootHide_FRAMEWORKS = UIKit Foundation IOKit
 RootHide_CODESIGN_FLAGS = -Sentitlements.plist
 RootHide_INSTALL_PATH = /Applications
 
-# Thêm cờ -Wno-error=deprecated-declarations để bỏ qua lỗi keyWindow
-RootHide_CFLAGS = -fobjc-arc -Wno-error=nonportable-include-path -Wno-error=deprecated-declarations -Wno-error=undeclared-selector
+# Thêm -DkIOMainPortDefault=kIOMasterPortDefault để tự động sửa lỗi IOKit
+RootHide_CFLAGS = -fobjc-arc -Wno-error=nonportable-include-path -Wno-error=deprecated-declarations -Wno-error=undeclared-selector -DkIOMainPortDefault=kIOMasterPortDefault
 
 include $(THEOS_MAKE_PATH)/application.mk
 
