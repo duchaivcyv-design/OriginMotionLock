@@ -6,27 +6,12 @@
 	<dict>
 		<key>Bundles</key>
 		<array>
-			<!-- Ứng dụng chỉnh sửa video & Mạng xã hội -->
-			<string>com.lemon.lvoverseas</string> <!-- CapCut -->
-			<string>com.zhiliaoapp.musically</string> <!-- TikTok -->
-			<string>com.facebook.Facebook</string> <!-- Facebook -->
-			<string>com.mbmobile</string> <!-- MB Bank -->
-			<string>com.VCB</string> <!-- Vietcombank -->
-			<string>com.techcombank.mobile</string> <!-- Techcombank -->
-			<string>com.bidv.SmartBanking</string> <!-- BIDV -->
-			<string>com.vietinbank.iPay</string> <!-- VietinBank -->
-			<string>com.acb.mobile</string> <!-- ACB -->
-			<string>com.vpbank.online</string> <!-- VPBank NEO -->
-			<string>com.tpb.mobile</string> <!-- TPBank -->
-			<string>com.sacombank.mBanking</string> <!-- Sacombank Pay -->
-			<string>com.agribank.E-MobileBanking</string> <!-- Agribank -->
-			<string>vn.com.techcombank.f@stmobile</string> <!-- FastMobile Techcombank cũ -->
-			<string>com.tpbank.quickpay</string> <!-- TPBank QuickPay -->
-			<string>com.garena.game.kgvn</string> <!-- Liên Quân Mobile -->
-			<string>com.tencent.igvn</string>     <!-- PUBG Mobile VN -->
-			<string>com.dts.freefireth</string>   <!-- Free Fire -->
-			<string>com.hoyoverse.genshinimpact</string> <!-- Genshin Impact -->
-			<string>com.HoYoverse.HSR</string>     <!-- Honkai: Star Rail -->
+			<string>com.garena.game.fcmobilevn</string> <!-- FC Mobile -->
+			<string>com.dts.freefireth</string>        <!-- Free Fire -->
+			<string>vn.com.techcombank.bb.app</string> <!-- Techcombank -->
+			<string>com.mbmobile</string>             <!-- MB Bank -->
+			<string>vn.com.vng.zalopay</string>       <!-- ZaloPay -->
+			<string>com.fpt.tpb.emobile</string>      <!-- TPBank Mobile -->
 		</array>
 	</dict>
 </dict>
