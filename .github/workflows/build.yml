@@ -77,11 +77,10 @@ jobs:
 
       - name: Install Cephei Headers
         run: |
-          curl -L https://github.com/AdamDemasi/Cephei/archive/refs/heads/main.zip -o /tmp/cephei.zip
-          unzip -q /tmp/cephei.zip -d /tmp/
-          mkdir -p $HOME/theos/include
-          cp -r /tmp/Cephei-main/Cephei $HOME/theos/include/
-          cp -r /tmp/Cephei-main/CepheiUI $HOME/theos/include/
+          mkdir -p $HOME/theos/include/Cephei $HOME/theos/include/CepheiUI
+          echo '#import <Foundation/Foundation.h>' > $HOME/theos/include/CepheiUI/HBListController.h
+          echo '@interface HBListController : PSListController @end' >> $HOME/theos/include/CepheiUI/HBListController.h
+          echo '#import <Foundation/Foundation.h>' > $HOME/theos/include/Cephei/HBPreferences.h
 
       - name: Build Package
         env:
