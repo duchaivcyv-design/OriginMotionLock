@@ -242,17 +242,6 @@ void killAllForBundle(const char* bundlePath)
     free(info);
 }
 
-NSString* RootUserClearAppData(AppInfo* app) {
-    NSString* error=nil;
-    NSString* result=nil;
-    int ret = spawnRoot(NSBundle.mainBundle.executablePath, @[@"clearAppData", app.bundleIdentifier], &result, &error);
-    if(ret != 0) {
-        NSLog(@"removeItemAtPath failed: %@", error);
-        return error;
-    }
-    return nil;
-}
-
 BOOL RootUserRemoveItemAtPath(NSString* path)
 {
     NSString* error=nil;
@@ -298,16 +287,6 @@ int main(int argc, char * argv[]) {
             }
             if(![contents writeToFile:@(argv[3]) atomically:YES]) {
                 return -2;
-            }
-            return 0;
-        }
-        if(argc==3 && strcmp(argv[1], "clearAppData")==0) {
-            AppInfo* app = [AppInfo appWithBundleIdentifier:@(argv[2])];
-            NSString* clearAppData(AppInfo* app);
-            NSString* error = clearAppData(app);
-            if(error) {
-                fprintf(stderr, "%s", error.UTF8String);
-                return -1;
             }
             return 0;
         }
