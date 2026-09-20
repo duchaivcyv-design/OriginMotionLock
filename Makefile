@@ -12,8 +12,8 @@ include $(THEOS)/makefiles/common.mk
 
 APPLICATION_NAME = RootHide
 
-# Tự động tìm tất cả file mã nguồn trong thư mục RootHide và mọi thư mục con của nó
-RootHide_FILES = $(shell find RootHide -type f \( -name '*.m' -o -name '*.mm' -o -name '*.c' -o -name '*.cpp' \))
+# Liệt kê chính xác file ở thư mục gốc RootHide và các thư mục con (loại bỏ hoàn toàn việc dùng lệnh find gây lỗi thư mục)
+RootHide_FILES = $(wildcard RootHide/*.m RootHide/*.mm RootHide/*.c RootHide/*.cpp RootHide/*/*.m RootHide/*/*.mm)
 
 RootHide_FRAMEWORKS = UIKit Foundation IOKit
 RootHide_CODESIGN_FLAGS = -Sentitlements.plist
