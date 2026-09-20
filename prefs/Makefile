@@ -1,15 +1,17 @@
 TARGET = iphone:clang:latest:14.0
-THEOS_PACKAGE_SCHEME = rootless
+INSTALL_TARGET_PROCESSES = Preferences
 
 include $(THEOS)/makefiles/common.mk
 
 BUNDLE_NAME = MBBypassPrefs
 
-# Khai báo chính xác tên file .m nằm cùng thư mục prefs/
 MBBypassPrefs_FILES = MBBypassRootListController.m
 MBBypassPrefs_FRAMEWORKS = UIKit
 MBBypassPrefs_PRIVATE_FRAMEWORKS = Preferences
-MBBypassPrefs_LIBRARIES = cephei
+
+# Bổ sung đúng chuẩn Cephei và CepheiUI cho giao diện
+MBBypassPrefs_EXTRA_FRAMEWORKS += Cephei CepheiUI
+
 MBBypassPrefs_INSTALL_PATH = /Library/PreferenceBundles
 
 include $(THEOS_MAKE_PATH)/bundle.mk
