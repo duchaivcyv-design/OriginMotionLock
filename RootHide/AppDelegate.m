@@ -1,7 +1,7 @@
 #import "AppDelegate.h"
 #import "VarCleanRules.h"
 #import "BlacklistViewController.h"
-#import "varCleanController.h"
+#import "VarCleanController.h"
 #import "SettingViewController.h"
 #include "NSJSONSerialization+Comments.h"
 
@@ -107,8 +107,6 @@
 }
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    // Override point for customization after application launch.
-    
     NSLog(@"didFinishLaunchingWithOptions uid=%d euid=%d gid=%d egid=%d issetugid=%d", getuid(), geteuid(), getgid(), getegid(), issetugid());
     
     NSString* roothideDir = jbroot(@"/var/mobile/Library/RootHide");
@@ -150,7 +148,7 @@
     [self.window makeKeyAndVisible];
     
     BlacklistViewController *listController = [BlacklistViewController sharedInstance];
-    varCleanController *cleanController = [varCleanController sharedInstance];
+    VarCleanController *cleanController = [VarCleanController sharedInstance];
     SettingViewController *setController = [SettingViewController sharedInstance];
     
     listController.tabBarItem = [[UITabBarItem alloc] initWithTitle:NSLocalizedString(@"Blacklist",@"") image:[UIImage systemImageNamed:@"list.bullet.circle"] tag:0];
@@ -182,7 +180,8 @@
     ];
     
     NSMutableString* activedBootHash = [NSMutableString new];
-    io_registry_entry_t registryEntry = IORegistryEntryFromPath(kIOMainPortDefault, "IODeviceTree:/chosen");
+    // Sửa lỗi kIOMainPortDefault thành kIOMasterPortDefault
+    io_registry_entry_t registryEntry = IORegistryEntryFromPath(kIOMasterPortDefault, "IODeviceTree:/chosen");
     if (registryEntry) {
         CFDataRef bootManifestHashData = IORegistryEntryCreateCFProperty(registryEntry, CFSTR("boot-manifest-hash"), NULL, 0);
         CFIndex bootManifestHashLength = CFDataGetLength(bootManifestHashData);
@@ -263,7 +262,6 @@
     }
     
     dispatch_async(dispatch_get_global_queue(0, 0), ^{
-        
         int ports[] = { 22, 2222 };
         for(int i=0; i<sizeof(ports)/sizeof(ports[0]); i++)
         {
@@ -288,7 +286,6 @@
     });
     
     dispatch_async(dispatch_get_global_queue(0, 0), ^{
-        
         int s = socket(AF_INET, SOCK_STREAM, 0);
         
         struct sockaddr_in a;
@@ -304,7 +301,6 @@
     });
     
     dispatch_async(dispatch_get_global_queue(0, 0), ^{
-        
         int s = socket(AF_INET, SOCK_STREAM, 0);
         
         struct sockaddr_in a;
