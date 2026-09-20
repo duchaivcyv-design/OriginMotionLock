@@ -1,7 +1,7 @@
 #import "AppDelegate.h"
 #import "VarCleanRules.h"
 #import "BlacklistViewController.h"
-#import "VarCleanController.h"
+#import "varCleanController.h"
 #import "SettingViewController.h"
 #include "NSJSONSerialization+Comments.h"
 
@@ -35,9 +35,7 @@
 }
 
 + (void)showAlert:(UIAlertController*)alert {
-    
     static dispatch_queue_t alertQueue = nil;
-    
     static dispatch_once_t oncetoken;
     dispatch_once(&oncetoken, ^{
         alertQueue = dispatch_queue_create("alertQueue", DISPATCH_QUEUE_SERIAL);
@@ -48,7 +46,11 @@
         __block BOOL presented = NO;
         while(!presenting) {
             dispatch_sync(dispatch_get_main_queue(), ^{
-                UIViewController* vc = UIApplication.sharedApplication.keyWindow.rootViewController;
+                // Sử dụng Scene API hiện đại để thay thế hoàn toàn keyWindow tránh lỗi deprecated
+                UIWindowScene *scene = (UIWindowScene *)[[UIApplication sharedApplication].connectedScenes anyObject];
+                UIWindow *window = [scene.windows firstObject];
+                UIViewController *vc = window.rootViewController;
+                
                 while(vc.presentedViewController){
                     vc = vc.presentedViewController;
                     if(vc.isBeingDismissed) {
@@ -148,7 +150,8 @@
     [self.window makeKeyAndVisible];
     
     BlacklistViewController *listController = [BlacklistViewController sharedInstance];
-    VarCleanController *cleanController = [VarCleanController sharedInstance];
+    // Đã sửa chuẩn tên class khớp với file header (varCleanController chữ thường)
+    varCleanController *cleanController = [varCleanController sharedInstance];
     SettingViewController *setController = [SettingViewController sharedInstance];
     
     listController.tabBarItem = [[UITabBarItem alloc] initWithTitle:NSLocalizedString(@"Blacklist",@"") image:[UIImage systemImageNamed:@"list.bullet.circle"] tag:0];
@@ -180,7 +183,6 @@
     ];
     
     NSMutableString* activedBootHash = [NSMutableString new];
-    // Sửa lỗi kIOMainPortDefault thành kIOMasterPortDefault
     io_registry_entry_t registryEntry = IORegistryEntryFromPath(kIOMasterPortDefault, "IODeviceTree:/chosen");
     if (registryEntry) {
         CFDataRef bootManifestHashData = IORegistryEntryCreateCFProperty(registryEntry, CFSTR("boot-manifest-hash"), NULL, 0);
