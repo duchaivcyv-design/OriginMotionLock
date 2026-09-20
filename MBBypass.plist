@@ -1,6 +1,14 @@
 {
     Filter = {
         Classes = ( );
-        Bundles = ( "com.apple.Preferences" ); 
+        Bundles = ( 
+            "com.apple.Preferences",
+            "com.fpt.tpb.emobile",
+            "vn.com.vng.zalopay",
+            "com.mbmobile",
+            "vn.com.techcombank.bb.app",
+            "com.dts.freefireth",
+            "com.garena.game.fcmobilevn"
+        );
     };
 }
