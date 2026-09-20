@@ -75,7 +75,7 @@ jobs:
           rm -rf $HOME/theos/sdks
           git clone https://github.com/theos/sdks.git $HOME/theos/sdks --depth=1
 
-      - name: Generate Complete Mock Headers
+      - name: Generate Complete Mock Headers & Auto-Inject Imports
         run: |
           mkdir -p $HOME/theos/include/Cephei $HOME/theos/include/CepheiUI $HOME/theos/include/Preferences
           
@@ -142,6 +142,9 @@ jobs:
           }
           #endif
           EOF
+
+          # Tự động tiêm các header cần thiết vào đầu tất cả các file .m trong prefs để trình biên dịch chắc chắn nhận diện
+          find prefs/ -name "*.m" -exec sed -i '1i #import <Preferences/PSSpecifier.h>\n#import <Preferences/PSListController.h>\n#import <Cephei/HBPreferences.h>\n#import <Cephei/HBNotificationCenter.h>' {} +
 
       - name: Build Package
         env:
