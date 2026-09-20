@@ -75,7 +75,7 @@ jobs:
           rm -rf $HOME/theos/sdks
           git clone https://github.com/theos/sdks.git $HOME/theos/sdks --depth=1
 
-            - name: Install Cephei Headers
+      - name: Install Cephei Headers
         run: |
           rm -rf /tmp/Cephei
           git clone --depth=1 https://github.com/AdamDemasi/Cephei.git /tmp/Cephei
