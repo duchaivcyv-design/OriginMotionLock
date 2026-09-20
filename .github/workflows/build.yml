@@ -21,20 +21,29 @@ jobs:
     - name: Install ldid
       run: brew install ldid
 
-    - name: Create and Fix Debian Control Scripts
-      run: |
-        mkdir -p debian
-        rm -f debian/postinst debian/prerm debian/postinst debian/preinst
-        echo -e "#!/bin/sh\nexit 0" > debian/postinst
-        chmod 755 debian/postinst
-
     - name: Compile and Package
       run: |
         export THEOS=$HOME/theos
-        # Chạy make stage trước để Theos sinh ra cấu trúc thư mục tạm, sau đó sửa quyền toàn bộ file script rồi mới gọi make package
+        
+        # Build stage và ép quyền script tránh lỗi 644
         make stage || true
         find . -name "postinst" -exec chmod 755 {} +
         find . -name "prerm" -exec chmod 755 {} +
         find . -name "preinst" -exec chmod 755 {} +
         find . -name "postrm" -exec chmod 755 {} +
+        
+        # Tiến hành đóng gói
         make package
+
+    - name: Move and Organize Debian Package
+      run: |
+        # Tạo thư mục packages và gom tất cả file .deb được tạo ra vào đây
+        mkdir -p packages
+        find . -maxdepth 2 -name "*.deb" -exec cp {} packages/ \;
+        ls -la packages/
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: packages
+        path: packages/*.deb
