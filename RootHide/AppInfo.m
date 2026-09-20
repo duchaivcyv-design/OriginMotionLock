@@ -9,6 +9,8 @@
 #define jbroot(path) (path)
 #endif
 
+@class LSPlugInKitProxy;
+
 @interface UIImage ()
 + (id)_iconForResourceProxy:(id)arg1 variant:(int)arg2 variantsScale:(float)arg3;
 + (id)_applicationIconImageForBundleIdentifier:(id)arg1 format:(int)arg2 scale:(double)arg3;
@@ -46,7 +48,7 @@
 @property (nonatomic, readonly) NSString *teamID;
 @property (nonatomic, readonly) NSString *vendorName;
 
-@property (nonatomic,readonly) NSArray<LSPlugInKitProxy *> *plugInKitPlugins;
+@property (nonatomic, readonly) NSArray<LSPlugInKitProxy *> *plugInKitPlugins;
 
 @end
 
@@ -65,7 +67,6 @@
         languageCode = [languageCode substringToIndex:range.location];
     }
     
-    // Sử dụng jbroot cho đường dẫn bundle để tương thích chuẩn rootless
     NSString *infoPlistPath = [jbroot(_applicationProxy.bundleURL.path) stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.lproj/InfoPlist.strings", languageCode]];
     NSFileManager *fileManager = [NSFileManager defaultManager];
     if ([fileManager fileExistsAtPath:infoPlistPath]) {
@@ -103,14 +104,17 @@
 {
     return _applicationProxy.applicationDSID;
 }
+
 - (NSURL*)bundleURL
 {
     return _applicationProxy.bundleURL;
 }
+
 - (NSURL*)containerURL
 {
     return _applicationProxy.containerURL;
 }
+
 - (NSString*)applicationIdentifier
 {
     return _applicationProxy.applicationIdentifier;
@@ -176,7 +180,7 @@
     return _applicationProxy.vendorName;
 }
 
-- (NSArray<LSPlugInKitProxy *> *) plugInKitPlugins
+- (NSArray<LSPlugInKitProxy *> *)plugInKitPlugins
 {
     return _applicationProxy.plugInKitPlugins;
 }
