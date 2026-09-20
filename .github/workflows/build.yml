@@ -84,11 +84,15 @@ jobs:
           @interface PSSpecifier : NSObject
           + (instancetype)preferenceSpecifierNamed:(NSString *)title target:(id)target set:(SEL)set get:(SEL)get detail:(Class)detail cell:(Class)cell edit:(Class)edit;
           - (void)setProperty:(id)value forKey:(NSString *)key;
+          - (id)propertyForKey:(NSString *)key;
+          - (void)setAction:(SEL)action;
           @end
           @interface PSSwitchSpecifier : PSSpecifier
           @end
-          static NSString *const PSGroupCell = @"PSGroupCell";
-          static NSString *const PSSwitchCell = @"PSSwitchCell";
+          #define PSGroupCell ((Class)0)
+          #define PSSwitchCell ((Class)0)
+          #define PSButtonCell ((Class)0)
+          #define PSTitleValueCell ((Class)0)
           EOF
 
           cat << 'EOF' > $HOME/theos/include/Preferences/PSListController.h
@@ -99,6 +103,13 @@ jobs:
           }
           - (id)loadSpecifiersFromPlistName:(NSString *)name target:(id)target;
           - (NSMutableArray *)specifiers;
+          - (void)reloadSpecifiers;
+          @end
+          EOF
+
+          cat << 'EOF' > $HOME/theos/include/Preferences/PSSwitchTableCell.h
+          #import <UIKit/UIKit.h>
+          @interface PSSwitchTableCell : UITableViewCell
           @end
           EOF
 
@@ -112,6 +123,7 @@ jobs:
           #import <Foundation/Foundation.h>
           @interface HBPreferences : NSObject
           - (instancetype)initWithIdentifier:(NSString *)identifier;
+          - (id)objectForKey:(NSString *)key;
           - (id)objectForKey:(NSString *)key default:(id)defaultValue;
           - (void)setObject:(id)value forKey:(NSString *)key;
           - (BOOL)boolForKey:(NSString *)key;
@@ -120,8 +132,11 @@ jobs:
           @end
           EOF
 
-          # Tự động chèn import phòng hờ file .m thiếu
-          find prefs/ -name "*.m" -exec sed -i '1i #import <Preferences/PSSpecifier.h>\n#import <Preferences/PSListController.h>\n#import <Cephei/HBPreferences.h>' {} +
+          # Định nghĩa bổ sung hàm thông báo AppLinks / Cephei nếu thiếu
+          cat << 'EOF' > $HOME/theos/include/Cephei/HBCompat.h
+          #import <Foundation/Foundation.h>
+          #define CPNotificationCenterPostNotification(name, deliverImmediately)
+          EOF
 
       - name: Build Package
         env:
