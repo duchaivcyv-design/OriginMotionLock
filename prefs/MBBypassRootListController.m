@@ -8,27 +8,12 @@
 #define MBBYPASS_NOTIF_KEY CFSTR("com.onyx.mbbypass/reloadPreferences")
 
 // ==============================================================================
-// KHAI BÁO PRIVATE APIS HỆ THỐNG IOS CHO VIỆC QUÉT ỨNG DỤNG NÂNG CAO
-// ==============================================================================
-@interface LSApplicationWorkspace : NSObject
-+ (id)defaultWorkspace;
-- (NSArray *)allInstalledApplications;
-@end
-
-@interface LSApplicationProxy : NSObject
-@property (nonatomic, readonly) NSString *applicationIdentifier;
-@property (nonatomic, readonly) NSString *localizedName;
-@property (nonatomic, readonly) NSURL *bundleURL;
-@end
-
-// ==============================================================================
 // GIAO DIỆN QUẢN LÝ CHÍNH - MBBypassRootListController
 // ==============================================================================
 @interface MBBypassRootListController : HBListController {
     NSMutableArray *_cachedBankApplications;
     NSMutableArray *_cachedWalletApplications;
     NSMutableArray *_cachedGameApplications;
-    NSMutableArray *_cachedSocialSecurityApplications;
     HBPreferences *_sharedPreferences;
     BOOL _isMasterSwitchEnabled;
 }
@@ -60,7 +45,6 @@
     _cachedBankApplications = [[NSMutableArray alloc] init];
     _cachedWalletApplications = [[NSMutableArray alloc] init];
     _cachedGameApplications = [[NSMutableArray alloc] init];
-    _cachedSocialSecurityApplications = [[NSMutableArray alloc] init];
 }
 
 - (BOOL)fetchCurrentMasterState {
@@ -75,95 +59,37 @@
 }
 
 // ==============================================================================
-// 2. THUẬT TOÁN QUÉT ỨNG DỤNG CHI TIẾT (DEEP SCANNING ENGINE)
+// 2. DANH SÁCH ỨNG DỤNG CỐ ĐỊNH ĐỂ TEST (ĐÚNG NHƯ TRONG ẢNH)
 // ==============================================================================
 - (void)executeDeepApplicationScanningEngine {
     [_cachedBankApplications removeAllObjects];
     [_cachedWalletApplications removeAllObjects];
     [_cachedGameApplications removeAllObjects];
-    [_cachedSocialSecurityApplications removeAllObjects];
 
-    if (!%c(LSApplicationWorkspace)) {
-        return;
-    }
+    // Chỉ định nghĩa đúng 6 ứng dụng có trong ảnh để test
+    NSArray *targetApps = @[
+        @{@"bundleID": @"com.fpt.tpb.emobile", @"name": @"TPBank Mobile", @"category": @"bank"},
+        @{@"bundleID": @"vn.com.vng.zalopay", @"name": @"Zalopay", @"category": @"wallet"},
+        @{@"bundleID": @"com.mbmobile", @"name": @"MB Bank", @"category": @"bank"},
+        @{@"bundleID": @"vn.com.techcombank.bb.app", @"name": @"Techcombank", @"category": @"bank"},
+        @{@"bundleID": @"com.dts.freefireth", @"name": @"Free Fire", @"category": @"game"},
+        @{@"bundleID": @"com.garena.game.fcmobilevn", @"name": @"FC Mobile VN", @"category": @"game"}
+    ];
 
-    @try {
-        LSApplicationWorkspace *workspace = [%c(LSApplicationWorkspace) defaultWorkspace];
-        NSArray *installedApps = [workspace allInstalledApplications];
+    for (NSDictionary *app in targetApps) {
+        NSString *category = app[@"category"];
+        NSDictionary *appInfo = @{
+            @"bundleID": app[@"bundleID"],
+            @"name": app[@"name"]
+        };
 
-        NSArray *bankKeywords = @[
-            @"vietcombank", @"techcombank", @"bidv", @"vietinbank", @"mbmobile", 
-            @"acb", @"vpbank", @"tpb", @"sacombank", @"vnpay", @"hdbank", 
-            @"msb", @"vib", @"shb", @"eximbank", @"seabank", @"ocb", @"lpbank", 
-            @"baoviet", @"namabank", @"pvcombank", @"kienlongbank", @"ncb", 
-            @"pgbank", @"Saigonbank", @"VBSP", @"Agribank", @"CBBank", @"OceanBank",
-            @"citibank", @"hsbc", @"standardchartered", @"shinhan", @"woori", 
-            @"cimb", @"uob", @"publicbank", @"dbs"
-        ];
-
-        NSArray *walletKeywords = @[
-            @"zalopay", @"momo", @"viettelpay", @"airpay", @"shopeepay", 
-            @"vinid", @"moca", @"grab", @"finhay", @"timo", 
-            @"cake", @"tnex", @"vnptmoney", @"payoo"
-        ];
-
-        NSArray *gameKeywords = @[
-            @"pubg", @"GenshinImpact", @"StarRail", @"freefire", 
-            @"leagueoflegends", @"wildrift", @"arena", @"roblox", 
-            @"minecraft", @"speedmobile", @"hok", @"onmyoji"
-        ];
-
-        NSArray *securityKeywords = @[
-            @"vssid", @"gov", @"vnid", @"bhxh", @"etax", @"customs", 
-            @"police", @"dichvucong", @"socio", @"medical"
-        ];
-
-        for (id app in installedApps) {
-            NSString *bundleID = nil;
-            if ([app respondsToSelector:@selector(applicationIdentifier)]) {
-                bundleID = [app applicationIdentifier];
-            } else if ([app respondsToSelector:@selector(bundleIdentifier)]) {
-                bundleID = [app bundleIdentifier];
-            }
-
-            NSString *appName = nil;
-            if ([app respondsToSelector:@selector(localizedName)]) {
-                appName = [app localizedName];
-            }
-
-            if (bundleID && appName) {
-                for (NSString *keyword in bankKeywords) {
-                    if ([bundleID rangeOfString:keyword options:NSCaseInsensitiveSearch].location != NSNotFound ||
-                        [appName rangeOfString:keyword options:NSCaseInsensitiveSearch].location != NSNotFound) {
-                        [_cachedBankApplications addObject:@{@"bundleID": bundleID, @"name": appName}];
-                        break;
-                    }
-                }
-                for (NSString *keyword in walletKeywords) {
-                    if ([bundleID rangeOfString:keyword options:NSCaseInsensitiveSearch].location != NSNotFound ||
-                        [appName rangeOfString:keyword options:NSCaseInsensitiveSearch].location != NSNotFound) {
-                        [_cachedWalletApplications addObject:@{@"bundleID": bundleID, @"name": appName}];
-                        break;
-                    }
-                }
-                for (NSString *keyword in gameKeywords) {
-                    if ([bundleID rangeOfString:keyword options:NSCaseInsensitiveSearch].location != NSNotFound ||
-                        [appName rangeOfString:keyword options:NSCaseInsensitiveSearch].location != NSNotFound) {
-                        [_cachedGameApplications addObject:@{@"bundleID": bundleID, @"name": appName}];
-                        break;
-                    }
-                }
-                for (NSString *keyword in securityKeywords) {
-                    if ([bundleID rangeOfString:keyword options:NSCaseInsensitiveSearch].location != NSNotFound ||
-                        [appName rangeOfString:keyword options:NSCaseInsensitiveSearch].location != NSNotFound) {
-                        [_cachedSocialSecurityApplications addObject:@{@"bundleID": bundleID, @"name": appName}];
-                        break;
-                    }
-                }
-            }
+        if ([category isEqualToString:@"bank"]) {
+            [_cachedBankApplications addObject:appInfo];
+        } else if ([category isEqualToString:@"wallet"]) {
+            [_cachedWalletApplications addObject:appInfo];
+        } else if ([category isEqualToString:@"game"]) {
+            [_cachedGameApplications addObject:appInfo];
         }
-    } @catch (NSException *exception) {
-        NSLog(@"[MBBypass DeepScan Error]: %@", exception.reason);
     }
 }
 
@@ -221,11 +147,10 @@
             }
         };
 
-        // --- CÁC NHÓM ỨNG DỤNG ---
-        constructAppGroupSpecs(_cachedBankApplications, @"Ngân hàng & Tài chính", [NSString stringWithFormat:@"Tìm thấy %lu ứng dụng ngân hàng.", (unsigned long)_cachedBankApplications.count]);
-        constructAppGroupSpecs(_cachedWalletApplications, @"Ví điện tử & Thanh toán số", [NSString stringWithFormat:@"Tìm thấy %lu ví điện tử.", (unsigned long)_cachedWalletApplications.count]);
-        constructAppGroupSpecs(_cachedSocialSecurityApplications, @"Dịch vụ công & Định danh", [NSString stringWithFormat:@"Tìm thấy %lu ứng dụng bảo mật công.", (unsigned long)_cachedSocialSecurityApplications.count]);
-        constructAppGroupSpecs(_cachedGameApplications, @"Trò chơi & Chống gian lận", [NSString stringWithFormat:@"Tìm thấy %lu trò chơi.", (unsigned long)_cachedGameApplications.count]);
+        // --- CÁC NHÓM ỨNG DỤNG TEST ---
+        constructAppGroupSpecs(_cachedBankApplications, @"Ngân hàng & Tài chính", @"Các ứng dụng Ngân hàng đang test.");
+        constructAppGroupSpecs(_cachedWalletApplications, @"Ví điện tử & Thanh toán số", @"Các ví điện tử đang test.");
+        constructAppGroupSpecs(_cachedGameApplications, @"Trò chơi & Chống gian lận", @"Các game đang test.");
 
         // --- NHÓM THÔNG TIN & LÀM MỚI ---
         PSSpecifier *groupInfo = [PSSpecifier preferenceSpecifierNamed:@"Hệ thống"
@@ -235,10 +160,10 @@
                                                                  detail:Nil
                                                                    cell:PSGroupCell
                                                                    edit:Nil];
-        [groupInfo setProperty:@"MBBypass chạy trên nền tảng rootless hiện đại, sử dụng cơ chế Cephei & RocketBootstrap." forKey:@"footerText"];
+        [groupInfo setProperty:@"MBBypass chạy trên nền tảng rootless hiện đại." forKey:@"footerText"];
         [specifiers addObject:groupInfo];
 
-        PSSpecifier *buttonRefresh = [PSSpecifier preferenceSpecifierNamed:@"Làm mới Danh sách Ứng dụng"
+        PSSpecifier *buttonRefresh = [PSSpecifier preferenceSpecifierNamed:@"Làm mới Danh sách"
                                                                      target:self
                                                                         set:nil
                                                                         get:nil
@@ -292,7 +217,7 @@
     [self reloadSpecifiers];
     
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Thành công" 
-                                                                   message:@"Đã làm mới danh sách ứng dụng thành công!" 
+                                                                   message:@"Đã làm mới danh sách thành công!" 
                                                             preferredStyle:UIAlertControllerStyleAlert];
     [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
     [self presentViewController:alert animated:YES completion:nil];
