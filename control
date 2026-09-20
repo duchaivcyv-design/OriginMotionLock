@@ -1,9 +1,9 @@
 Package: com.onyx.mbbypass
-Name: MBBypass
+Name: MBBypass Beta
 Author: Onyx
 Description: Tweak bypass bảo mật cực mạnh với giao diện quản lý thông minh, tích hợp Cephei và khóa phụ thuộc.
 Architecture: iphoneos-arm
 Depends: mobilesubstrate (>= 0.9.5000), ws.hbang.common (>= 1.16.0), com.rpetrich.rocketbootstrap (>= 1.0.10)
 Maintainer: Onyx
 Section: Tweaks
-Version: 1.2.0
+Version: 0.0.2-Beta
