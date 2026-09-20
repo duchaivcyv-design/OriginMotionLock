@@ -1,4 +1,4 @@
-ARCHS = arm64 arm64e
+ARCHS = arm64
 TARGET = iphone:latest:15.0
 
 INSTALL_TARGET_PROCESSES = RootHide
@@ -17,22 +17,7 @@ RootHide_FRAMEWORKS = UIKit Foundation IOKit
 RootHide_CODESIGN_FLAGS = -Sentitlements.plist
 RootHide_INSTALL_PATH = /Applications
 
-# Toàn bộ cờ bỏ qua lỗi cho toàn bộ các file nguồn
-RootHide_CFLAGS = -fobjc-arc \
-	-Wno-error=nonportable-include-path \
-	-Wno-error=deprecated-declarations \
-	-Wno-error=undeclared-selector \
-	-Wno-error=shadow-ivar \
-	-Wno-error=incompatible-pointer-types-discards-qualifiers \
-	-Wno-error=block-capture-autoreleasing \
-	-Wno-error=unused-variable \
-	-Wno-error=implicit-function-declaration \
-	-Wno-error=int-conversion \
-	-Wno-error=multichar \
-	-Wno-error=constant-conversion \
-	-Wno-error=backslash-newline-escape \
-	-Djbroot\(path\)=path \
-	-DkIOMainPortDefault=kIOMasterPortDefault
+RootHide_CFLAGS = -fobjc-arc -Wno-error=nonportable-include-path -Wno-error=deprecated-declarations -Wno-error=undeclared-selector -Wno-error=shadow-ivar -Wno-error=incompatible-pointer-types-discards-qualifiers -Wno-error=block-capture-autoreleasing -Wno-error=unused-variable -Wno-error=implicit-function-declaration -Wno-error=int-conversion -Wno-error=multichar -Wno-error=constant-conversion -Wno-error=backslash-newline-escape -Djbroot\(path\)=path -DkIOMainPortDefault=kIOMasterPortDefault
 
 include $(THEOS_MAKE_PATH)/application.mk
 
