@@ -21,13 +21,12 @@ jobs:
     - name: Install ldid
       run: brew install ldid
 
-    - name: Fix script permissions
+    - name: Create and Fix Debian Control Scripts
       run: |
-        chmod +x debian/postinst || true
-        # Nếu project của bạn có thêm các file script khác trong thư mục debian, hãy cấp quyền luôn cho chúng:
-        [ -f debian/prerm ] && chmod +x debian/prerm || true
-        [ -f debian/postrm ] && chmod +x debian/postrm || true
-        [ -f debian/preinst ] && chmod +x debian/preinst || true
+        # Chủ động tạo thư mục debian và file postinst chuẩn để Theos không tự sinh ra file lỗi quyền
+        mkdir -p debian
+        echo -e "#!/bin/sh\nexit 0" > debian/postinst
+        chmod 755 debian/postinst
 
     - name: Compile and Package
       run: |
