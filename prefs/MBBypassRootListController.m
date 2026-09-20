@@ -138,7 +138,7 @@
                     
                     PSSwitchSpecifier *appSwitchSpec = [PSSwitchSpecifier preferenceSpecifierNamed:targetAppName target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:Nil cell:PSSwitchCell edit:Nil];
                     [appSwitchSpec setProperty:MBBYPASS_PREFERENCE_DOMAIN forKey:@"defaults"];
-                    [appSwitchSpec.properties setObject:preferenceKey forKey:@"key"];
+                    [appSwitchSpec setProperty:preferenceKey forKey:@"key"]; // Đã sửa chuẩn cú pháp PSSpecifier
                     [appSwitchSpec setProperty:@YES forKey:@"default"];
                     [appSwitchSpec setProperty:@(_isMasterSwitchEnabled) forKey:@"enabled"];
                     
