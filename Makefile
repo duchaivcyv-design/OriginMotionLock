@@ -15,7 +15,7 @@ APPLICATION_NAME = RootHide
 # Quét trọn vẹn toàn bộ các file nguồn (.m, .mm, .c, .cpp) ở thư mục gốc và thư mục con
 RootHide_FILES = $(wildcard *.m *.mm *.c *.cpp RootHide/*.m RootHide/*.mm RootHide/*.c RootHide/*.cpp RootHide/*/*.m RootHide/*/*.mm)
 
-RootHide_FRAMEWORKS = UIKit Foundation IOKit
+RootHide_FRAMEWORKS = UIKit Foundation IOKit MobileCoreServices
 RootHide_CODESIGN_FLAGS = -Sentitlements.plist
 RootHide_INSTALL_PATH = /Applications
 
