@@ -7,9 +7,6 @@
 #define MBBYPASS_PREFERENCE_DOMAIN @"com.onyx.mbbypass"
 #define MBBYPASS_NOTIF_KEY CFSTR("com.onyx.mbbypass/reloadPreferences")
 
-// ==============================================================================
-// GIAO DIỆN QUẢN LÝ CHÍNH - MBBypassRootListController
-// ==============================================================================
 @interface MBBypassRootListController : HBListController {
     NSMutableArray *_cachedBankApplications;
     NSMutableArray *_cachedWalletApplications;
@@ -27,9 +24,6 @@
 
 @implementation MBBypassRootListController
 
-// ==============================================================================
-// 1. KHỞI TẠO VÀ XÂY DỰNG BỘ ĐỆM DỮ LIỆU ĐỘC LẬP
-// ==============================================================================
 - (id)init {
     self = [super init];
     if (self) {
@@ -58,15 +52,11 @@
     return YES;
 }
 
-// ==============================================================================
-// 2. DANH SÁCH ỨNG DỤNG CỐ ĐỊNH ĐỂ TEST (ĐÚNG NHƯ TRONG ẢNH)
-// ==============================================================================
 - (void)executeDeepApplicationScanningEngine {
     [_cachedBankApplications removeAllObjects];
     [_cachedWalletApplications removeAllObjects];
     [_cachedGameApplications removeAllObjects];
 
-    // Chỉ định nghĩa đúng 6 ứng dụng có trong ảnh để test
     NSArray *targetApps = @[
         @{@"bundleID": @"com.fpt.tpb.emobile", @"name": @"TPBank Mobile", @"category": @"bank"},
         @{@"bundleID": @"vn.com.vng.zalopay", @"name": @"Zalopay", @"category": @"wallet"},
@@ -93,14 +83,10 @@
     }
 }
 
-// ==============================================================================
-// 3. XÂY DỰNG GIAO DIỆN SPECIFIERS
-// ==============================================================================
 - (NSArray *)specifiers {
     if (!_specifiers) {
         NSMutableArray *specifiers = [[NSMutableArray alloc] init];
 
-        // --- NHÓM 1: TRUNG TÂM ĐIỀU KHIỂN CỐT LÕI ---
         PSSpecifier *groupSystem = [PSSpecifier preferenceSpecifierNamed:@"Trung tâm Điều khiển Cốt lõi"
                                                                    target:self
                                                                       set:nil
@@ -111,7 +97,6 @@
         [groupSystem setProperty:@"Kích hoạt công tắc tổng để mở khóa toàn bộ hệ thống ẩn Sandbox và các thiết lập chuyên sâu bên dưới." forKey:@"footerText"];
         [specifiers addObject:groupSystem];
 
-        // Công tắc tổng (Master Switch)
         PSSwitchSpecifier *switchMaster = [PSSwitchSpecifier preferenceSpecifierNamed:@"Kích hoạt Bypass Tổng"
                                                                                 target:self
                                                                                    set:@selector(setMasterPreferenceValue:specifier:)
@@ -124,7 +109,6 @@
         [switchMaster setProperty:@YES forKey:@"default"];
         [specifiers addObject:switchMaster];
 
-        // --- HÀM HELPER KHỞI TẠO NHÓM ỨNG DỤNG ĐỘNG ---
         void (^constructAppGroupSpecs)(NSArray *, NSString *, NSString *) = ^(NSArray *appArray, NSString *groupTitle, NSString *footerDescription) {
             if (appArray.count > 0) {
                 PSSpecifier *groupSpec = [PSSpecifier preferenceSpecifierNamed:groupTitle target:self set:nil get:nil detail:Nil cell:PSGroupCell edit:Nil];
@@ -138,7 +122,7 @@
                     
                     PSSwitchSpecifier *appSwitchSpec = [PSSwitchSpecifier preferenceSpecifierNamed:targetAppName target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:Nil cell:PSSwitchCell edit:Nil];
                     [appSwitchSpec setProperty:MBBYPASS_PREFERENCE_DOMAIN forKey:@"defaults"];
-                    [appSwitchSpec setProperty:preferenceKey forKey:@"key"]; // Đã sửa chuẩn cú pháp PSSpecifier
+                    [appSwitchSpec setProperty:preferenceKey forKey:@"key"];
                     [appSwitchSpec setProperty:@YES forKey:@"default"];
                     [appSwitchSpec setProperty:@(_isMasterSwitchEnabled) forKey:@"enabled"];
                     
@@ -147,12 +131,10 @@
             }
         };
 
-        // --- CÁC NHÓM ỨNG DỤNG TEST ---
         constructAppGroupSpecs(_cachedBankApplications, @"Ngân hàng & Tài chính", @"Các ứng dụng Ngân hàng đang test.");
         constructAppGroupSpecs(_cachedWalletApplications, @"Ví điện tử & Thanh toán số", @"Các ví điện tử đang test.");
         constructAppGroupSpecs(_cachedGameApplications, @"Trò chơi & Chống gian lận", @"Các game đang test.");
 
-        // --- NHÓM THÔNG TIN & LÀM MỚI ---
         PSSpecifier *groupInfo = [PSSpecifier preferenceSpecifierNamed:@"Hệ thống"
                                                                  target:self
                                                                     set:nil
@@ -178,9 +160,6 @@
     return _specifiers;
 }
 
-// ==============================================================================
-// 4. QUẢN LÝ DỮ LIỆU & ĐỒNG BỘ
-// ==============================================================================
 - (id)readPreferenceValue:(PSSpecifier *__nonnull)specifier {
     @try {
         NSString *key = [specifier propertyForKey:@"key"];
