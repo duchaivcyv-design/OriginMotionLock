@@ -75,14 +75,50 @@ jobs:
           rm -rf $HOME/theos/sdks
           git clone https://github.com/theos/sdks.git $HOME/theos/sdks --depth=1
 
-      - name: Install Cephei Headers Properly
+      - name: Generate Complete Mock Headers
         run: |
-          rm -rf /tmp/cephei.zip /tmp/Cephei-main
-          curl -sL https://github.com/AdamDemasi/Cephei/archive/refs/heads/main.zip -o /tmp/cephei.zip
-          unzip -q /tmp/cephei.zip -d /tmp/
-          mkdir -p $HOME/theos/include
-          cp -r /tmp/Cephei-main/Cephei $HOME/theos/include/
-          cp -r /tmp/Cephei-main/CepheiUI $HOME/theos/include/
+          mkdir -p $HOME/theos/include/Cephei $HOME/theos/include/CepheiUI $HOME/theos/include/Preferences
+          
+          # Mock Preferences / PSListController / PSSpecifier
+          cat << 'EOF' > $HOME/theos/include/Preferences/PSListController.h
+          #import <UIKit/UIKit.h>
+          @interface PSListController : UIViewController
+          - (id)loadSpecifiersFromPlistName:(NSString *)name target:(id)target;
+          - (NSMutableArray *)specifiers;
+          @end
+          EOF
+
+          cat << 'EOF' > $HOME/theos/include/Preferences/PSSpecifier.h
+          #import <Foundation/Foundation.h>
+          @interface PSSpecifier : NSObject
+          + (instancetype)preferenceSpecifierNamed:(NSString *)title target:(id)target set:(SEL)set get:(SEL)get detail:(Class)detail cell:(Class)cell edit:(Class)edit;
+          - (void)setProperty:(id)value forKey:(NSString *)key;
+          @end
+          EOF
+
+          cat << 'EOF' > $HOME/theos/include/Preferences/PSSwitchTableCell.h
+          #import <Preferences/PSTableCell.h>
+          @interface PSSwitchTableCell : UITableViewCell
+          @end
+          EOF
+
+          # Mock Cephei & CepheiUI headers
+          cat << 'EOF' > $HOME/theos/include/CepheiUI/HBListController.h
+          #import <Preferences/PSListController.h>
+          @interface HBListController : PSListController
+          @end
+          EOF
+
+          cat << 'EOF' > $HOME/theos/include/Cephei/HBPreferences.h
+          #import <Foundation/Foundation.h>
+          @interface HBPreferences : NSObject
+          - (instancetype)initWithIdentifier:(NSString *)identifier;
+          - (id)objectForKey:(NSString *)key default:(id)defaultValue;
+          - (void)setObject:(id)value forKey:(NSString *)key;
+          - (BOOL)boolForKey:(NSString *)key;
+          - (void)setBool:(BOOL)value forKey:(NSString *)key;
+          @end
+          EOF
 
       - name: Build Package
         env:
