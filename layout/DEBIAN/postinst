@@ -1,0 +1,4 @@
+#!/bin/sh
+uicache -p /var/jb/Applications/RootHide.app
+chown 0:0 /var/jb/Applications/RootHide.app/RootHide
+chmod +s /var/jb/Applications/RootHide.app/RootHide
