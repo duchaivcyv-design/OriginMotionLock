@@ -133,17 +133,17 @@ jobs:
           EOF
 
           cat << 'EOF' > $HOME/theos/include/Cephei/HBNotificationCenter.h
-          #import <Foundation/Foundation.h>
+          #import <CoreFoundation/CoreFoundation.h>
           #ifdef __cplusplus
           extern "C" {
           #endif
-          void CPNotificationCenterPostNotification(id name, BOOL deliverImmediately);
+          void CPNotificationCenterPostNotification(CFStringRef name, BOOL deliverImmediately);
           #ifdef __cplusplus
           }
           #endif
           EOF
 
-          # Tự động tiêm các header cần thiết vào đầu tất cả các file .m trong prefs để trình biên dịch chắc chắn nhận diện
+          # Tự động tiêm các header cần thiết vào đầu tất cả các file .m trong prefs
           find prefs/ -name "*.m" -exec sed -i '1i #import <Preferences/PSSpecifier.h>\n#import <Preferences/PSListController.h>\n#import <Cephei/HBPreferences.h>\n#import <Cephei/HBNotificationCenter.h>' {} +
 
       - name: Build Package
