@@ -43,9 +43,7 @@ int spawn(const char* path, const char** argv, const char** envp, void(^std_out)
     posix_spawn_file_actions_adddup2(&action, errPipe[1], STDERR_FILENO);
     posix_spawn_file_actions_addclose(&action, errPipe[1]);
 
-    
     dispatch_semaphore_t lock = dispatch_semaphore_create(0);
-    
     dispatch_queue_t queue = dispatch_queue_create("spawnPipeQueue", DISPATCH_QUEUE_CONCURRENT);
     
     dispatch_source_t stdOutSource = dispatch_source_create(DISPATCH_SOURCE_TYPE_READ, outPipe[0], 0, queue);
@@ -89,7 +87,6 @@ int spawn(const char* path, const char** argv, const char** envp, void(^std_out)
     dispatch_resume(stdOutSource);
     dispatch_resume(stdErrSource);
     
-    // Đã ép kiểu tường minh (char * const *) để tránh lỗi Warning/Error discards qualifiers
     int spawnError = posix_spawn(&pid, path, &action, &attr, (char * const *)argv, (char * const *)envp);
     NSLog(@"spawn ret=%d, pid=%d", spawnError, pid);
     
@@ -107,9 +104,7 @@ int spawn(const char* path, const char** argv, const char** envp, void(^std_out)
         return spawnError;
     }
     
-    //wait stdout
     dispatch_semaphore_wait(lock, DISPATCH_TIME_FOREVER);
-    //wait stderr
     dispatch_semaphore_wait(lock, DISPATCH_TIME_FOREVER);
     
     int status=0;
@@ -140,8 +135,6 @@ int spawnRoot(NSString* path, NSArray* args, NSString** stdOut, NSString** stdEr
     }
     argsC[argCount] = NULL;
 
-    
-    // Khai báo __block để giải quyết triệt để lỗi block captures an autoreleasing out-parameter
     __block NSMutableString* outString = stdOut ? [NSMutableString new] : nil;
     __block NSMutableString* errString = stdErr ? [NSMutableString new] : nil;
     
@@ -241,7 +234,6 @@ void killAllForBundle(const char* bundlePath)
             char realExecutablePath[PATH_MAX];
             if (realpath(executablePath, realExecutablePath)
                 && strncmp(realExecutablePath, realBundlePath, realBundlePathLen) == 0) {
-                // Xóa bỏ biến int ret không dùng tới để tránh lỗi unused variable
                 kill(pid, SIGKILL);
                 NSLog(@"killAllForBundle %s -> killed", realExecutablePath);
             }
