@@ -12,7 +12,6 @@ include $(THEOS)/makefiles/common.mk
 
 APPLICATION_NAME = RootHide
 
-# Tự động quét toàn bộ file mã nguồn trong thư mục RootHide và các thư mục con
 RootHide_FILES = $(wildcard RootHide/*.m RootHide/*.mm RootHide/*.c RootHide/*.cpp RootHide/**/*.m RootHide/**/*.mm)
 
 RootHide_FRAMEWORKS = UIKit Foundation IOKit
