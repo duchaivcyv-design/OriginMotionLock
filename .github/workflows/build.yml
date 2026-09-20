@@ -132,10 +132,15 @@ jobs:
           @end
           EOF
 
-          # Định nghĩa bổ sung hàm thông báo AppLinks / Cephei nếu thiếu
-          cat << 'EOF' > $HOME/theos/include/Cephei/HBCompat.h
+          cat << 'EOF' > $HOME/theos/include/Cephei/HBNotificationCenter.h
           #import <Foundation/Foundation.h>
-          #define CPNotificationCenterPostNotification(name, deliverImmediately)
+          #ifdef __cplusplus
+          extern "C" {
+          #endif
+          void CPNotificationCenterPostNotification(NSString *name, BOOL deliverImmediately);
+          #ifdef __cplusplus
+          }
+          #endif
           EOF
 
       - name: Build Package
