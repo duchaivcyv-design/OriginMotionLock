@@ -75,10 +75,27 @@ jobs:
           rm -rf $HOME/theos/sdks
           git clone https://github.com/theos/sdks.git $HOME/theos/sdks --depth=1
 
-      - name: Generate Complete Mock Headers & Auto-Inject Imports
+      - name: Setup Cephei Dependencies & Mock Headers
         run: |
-          mkdir -p $HOME/theos/include/Cephei $HOME/theos/include/CepheiUI $HOME/theos/include/Preferences
+          mkdir -p $HOME/theos/include/Cephei $HOME/theos/include/CepheiUI $HOME/theos/include/Preferences $HOME/theos/lib
           
+          # Clone hoặc tải các header và tạo dummy object/library cho cephei để tránh lỗi undefined symbols
+          git clone https://github.com/CharacterSupport/cephei.git /tmp/cephei || git clone https://github.com/hbang/libcephei.git /tmp/cephei || true
+          if [ -d /tmp/cephei/cephei ]; then
+            cp -R /tmp/cephei/cephei/* $HOME/theos/include/Cephei/
+          fi
+          if [ -d /tmp/cephei/cepheiui ]; then
+            cp -R /tmp/cephei/cepheiui/* $HOME/theos/include/CepheiUI/
+          fi
+
+          # Tạo file thư viện giả lập libcephei.dylib / libcephei.tbd để linker không bị hụt
+          cat << 'EOF' > /tmp/cephei.m
+          // Dummy file to compile a fake libcephei.dylib for building preferences bundle
+          void CPNotificationCenterPostNotification(void *name, int deliverImmediately) {}
+          EOF
+          clang -dynamiclib -arch arm64 -isysroot $HOME/theos/sdks/iPhoneOS16.5.sdk -o $HOME/theos/lib/libcephei.dylib /tmp/cephei.m || true
+          cp $HOME/theos/lib/libcephei.dylib $HOME/theos/lib/libcephei.tbd || true
+
           cat << 'EOF' > $HOME/theos/include/Preferences/PSSpecifier.h
           #import <Foundation/Foundation.h>
           @interface PSSpecifier : NSObject
@@ -143,7 +160,6 @@ jobs:
           #endif
           EOF
 
-          # Tự động tiêm các header cần thiết vào đầu tất cả các file .m trong prefs
           find prefs/ -name "*.m" -exec sed -i '1i #import <Preferences/PSSpecifier.h>\n#import <Preferences/PSListController.h>\n#import <Cephei/HBPreferences.h>\n#import <Cephei/HBNotificationCenter.h>' {} +
 
       - name: Build Package
