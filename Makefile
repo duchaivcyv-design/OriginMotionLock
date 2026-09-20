@@ -1,7 +1,7 @@
 ARCHS = arm64
 TARGET = iphone:clang:14.5:14.0
 
-# Bật chế độ tự động phân tách đường dẫn rootless
+# Bật chế độ rootless cho iOS hiện đại
 THEOS_PACKAGE_SCHEME = rootless
 
 PACKAGE_VERSION = 1.0.0
