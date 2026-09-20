@@ -18,6 +18,9 @@ jobs:
       run: |
         git clone --recursive https://github.com/theos/theos.git $HOME/theos
 
+    - name: Install ldid
+      run: brew install ldid
+
     - name: Compile and Package
       run: |
         export THEOS=$HOME/theos
