@@ -2,7 +2,7 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>com.apple.private.security.platform-application</key>
+    <key>platform-application</key>
     <true/>
     <key>com.apple.private.security.no-sandbox</key>
     <true/>
@@ -14,20 +14,16 @@
     <true/>
     <key>run-unsigned-code</key>
     <true/>
-    <key>keyproc_info-allow</key>
+    <key>com.apple.private.security.storage.AppBundles</key>
     <true/>
-    <key>com.apple.private.security.storage.AppBundleLocal</key>
+    <key>com.apple.private.security.storage.AppDataContainers</key>
     <true/>
-    <key>com.apple.private.security.storage.AppDataContainer</key>
-    <true/>
-    <key>com.apple.private.persona-mgmt</key>
-    <true/>
-    <!-- Tối ưu chống crash đồ họa và phân vùng hệ thống -->
+    <!-- Ngăn ngừa lỗi CoreImage sharesheet -->
     <key>com.apple.security.iokit-user-client-class</key>
     <array>
         <string>AGXDeviceUserClient</string>
-        <string>IOHIDControllerUserClient</string>
-        <string>IOSurfaceHostUserClient</string>
+        <string>IOHIDXControllerUserClient</string>
+        <string>IOSurfaceRootUserClient</string>
     </array>
 </dict>
 </plist>
