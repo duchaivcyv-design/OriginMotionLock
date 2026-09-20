@@ -196,18 +196,19 @@ BOOL isDefaultInstallationPath(NSString* path)
 }
 
 - (NSArray*)updateData {
-    NSMutableArray* applications = [NSMutableArray new];
+    // Đã đổi tên từ 'applications' thành 'mutableApps' để tránh xung đột shadow-ivar
+    NSMutableArray* mutableApps = [NSMutableArray new];
     NSArray* allInstalledApplications = [LSApplicationWorkspace.defaultWorkspace allInstalledApplications];
     for (id proxy in allInstalledApplications) {
         AppInfo* app = [AppInfo appWithPrivateProxy:proxy];
         if (!app.isHiddenApp
            && ![app.bundleIdentifier hasPrefix:@"com.apple."]
            && isDefaultInstallationPath(app.bundleURL.path)) {
-            [applications addObject:app];
+            [mutableApps addObject:app];
         }
     }
     
-    return applications;
+    return mutableApps;
 }
 
 #pragma mark - Table view data source
@@ -270,7 +271,6 @@ BOOL isDefaultInstallationPath(NSString* path)
     
     cell.accessoryView = theSwitch;
     
-    // Gỡ bỏ gesture cũ nếu có trước khi thêm mới (tránh việc add nhiều lần khi cell bị reuse)
     for (UIGestureRecognizer *subRecognizer in cell.contentView.gestureRecognizers) {
         [cell.contentView removeGestureRecognizer:subRecognizer];
     }
