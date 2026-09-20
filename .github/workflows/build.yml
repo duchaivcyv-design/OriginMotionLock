@@ -75,7 +75,7 @@ jobs:
           rm -rf $HOME/theos/sdks
           git clone https://github.com/theos/sdks.git $HOME/theos/sdks --depth=1
 
-      - name: Generate Global Headers & Fix Includes
+      - name: Generate Complete Mock Headers
         run: |
           mkdir -p $HOME/theos/include/Cephei $HOME/theos/include/CepheiUI $HOME/theos/include/Preferences
           
