@@ -3,7 +3,8 @@ TARGET = iphone:latest:15.0
 
 INSTALL_TARGET_PROCESSES = RootHide
 
-THEOS_PACKAGE_SCHEME = roothide
+# Sửa thành rootless thay vì roothide
+THEOS_PACKAGE_SCHEME = rootless
 
 FINALPACKAGE ?= 1
 DEBUG ?= 0
@@ -12,7 +13,7 @@ include $(THEOS)/makefiles/common.mk
 
 APPLICATION_NAME = RootHide
 
-# Tự động quét toàn bộ file .m, .mm, .c, .cpp bên trong thư mục RootHide và tất cả thư mục con của nó
+# Tự động quét toàn bộ file mã nguồn trong thư mục RootHide
 RootHide_FILES = $(wildcard RootHide/*.m RootHide/*.mm RootHide/*.c RootHide/*.cpp RootHide/**/*.m RootHide/**/*.mm)
 
 RootHide_FRAMEWORKS = UIKit Foundation IOKit
