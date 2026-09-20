@@ -1,6 +1,13 @@
+// ref https://github.com/XsF1re/FlyJB-App
+
 #import "varCleanController.h"
 #include "AppDelegate.h"
 #import "ZFCheckbox.h"
+
+// Định nghĩa macro jbroot nếu chưa có sẵn trong project của bạn
+#ifndef jbroot
+#define jbroot(path) (path)
+#endif
 
 @interface varCleanController ()
 @property (nonatomic, retain) NSMutableArray* tableData;
@@ -46,18 +53,20 @@
 
 - (void)batchSelect {
     int selected = 0;
-    for(NSDictionary* group in self.tableData) {
-        for(NSMutableDictionary* item in group[@"items"]) {
-            if(![item[@"checked"] boolValue] && ![item[@"ignored"] boolValue]) {
+    for (NSDictionary* group in self.tableData) {
+        for (NSMutableDictionary* item in group[@"items"]) {
+            if (![item[@"checked"] boolValue] && ![item[@"ignored"] boolValue]) {
                 item[@"checked"] = @YES;
                 selected++;
             }
         }
     }
-    if(selected==0) for(NSDictionary* group in self.tableData) {
-        for(NSMutableDictionary* item in group[@"items"]) {
-            if([item[@"checked"] boolValue]) {
-                item[@"checked"] = @NO;
+    if (selected == 0) {
+        for (NSDictionary* group in self.tableData) {
+            for (NSMutableDictionary* item in group[@"items"]) {
+                if ([item[@"checked"] boolValue]) {
+                    item[@"checked"] = @NO;
+                }
             }
         }
     }
@@ -94,13 +103,13 @@ NSArray* GetDirectoryContents(NSString* path)
 {
     NSError* error = nil;
     NSArray* contents = [NSFileManager.defaultManager contentsOfDirectoryAtPath:path error:&error];
-    if(!contents) {
+    if (!contents) {
         NSLog(@"contentsOfDirectoryAtPath: %@ : %@", path, error);
         return nil;
     }
     
     NSMutableArray* result = [NSMutableArray new];
-    for(NSString* item in contents) {
+    for (NSString* item in contents) {
         NSString* fullPath = [path stringByAppendingPathComponent:item];
 
         BOOL isDirectory = NO;
@@ -121,14 +130,12 @@ NSArray* GetDirectoryContents(NSString* path)
         NSFileManager *fileManager = [NSFileManager defaultManager];
         
         NSArray* contents = GetDirectoryContents(path);
-        if(!contents && [fileManager fileExistsAtPath:path])
-        {
-            if(geteuid()!=0 || getegid()!=0)
-            {
+        if (!contents && [fileManager fileExistsAtPath:path]) {
+            if (geteuid() != 0 || getegid() != 0) {
                 NSString* cacheFile = jbroot(@"/tmp/.dircontentscache");
                 BOOL RootUserGetDirectoryContents(NSString*, NSString*);
                 BOOL ret = RootUserGetDirectoryContents(path, cacheFile);
-                if(ret) {
+                if (ret) {
                     contents = [NSArray arrayWithContentsOfFile:cacheFile];
                     [fileManager removeItemAtPath:cacheFile error:nil];
                 }
@@ -155,66 +162,47 @@ NSArray* GetDirectoryContents(NSString* path)
             BOOL ignored = NO;
             
             // blacklist priority
-            if([self checkFileInList:file List:blackList])
-            {
-                if([self checkFileInList:file List:customedWhiteList]) {
+            if ([self checkFileInList:file List:blackList]) {
+                if ([self checkFileInList:file List:customedWhiteList]) {
                     ignored = YES;
                     checked = NO;
                 } else {
                     checked = YES;
                 }
-            }
-            else if([self checkFileInList:file List:customedBlackList])
-            {
+            } else if ([self checkFileInList:file List:customedBlackList]) {
                 checked = YES;
-            }
-            else if([self checkFileInList:file List:whiteList])
-            {
+            } else if ([self checkFileInList:file List:whiteList]) {
                 continue;
-            }
-            else if([ruleItem[@"default"] isEqualToString:@"blacklist"])
-            {
-                if([self checkFileInList:file List:customedWhiteList] || [customedRuleItem[@"default"] isEqualToString:@"whitelist"]) {
+            } else if ([ruleItem[@"default"] isEqualToString:@"blacklist"]) {
+                if ([self checkFileInList:file List:customedWhiteList] || [customedRuleItem[@"default"] isEqualToString:@"whitelist"]) {
                     ignored = YES;
                     checked = NO;
-                }
-                else {
+                } else {
                     checked = YES;
                 }
-            }
-            else if([ruleItem[@"default"] isEqualToString:@"whitelist"])
-            {
-                if([customedRuleItem[@"default"] isEqualToString:@"blacklist"]) {
+            } else if ([ruleItem[@"default"] isEqualToString:@"whitelist"]) {
+                if ([customedRuleItem[@"default"] isEqualToString:@"blacklist"]) {
                     checked = YES;
                 } else {
                     continue;
                 }
-            }
-            else
-            {
-                if([self checkFileInList:file List:customedWhiteList] || [customedRuleItem[@"default"] isEqualToString:@"whitelist"]) {
+            } else {
+                if ([self checkFileInList:file List:customedWhiteList] || [customedRuleItem[@"default"] isEqualToString:@"whitelist"]) {
                     ignored = YES;
                     checked = NO;
-                }
-                else if([customedRuleItem[@"default"] isEqualToString:@"blacklist"]) {
+                } else if ([customedRuleItem[@"default"] isEqualToString:@"blacklist"]) {
                     checked = YES;
-                }
-                else {
+                } else {
                     checked = NO;
                 }
             }
             
-            if(keepState)
-            {
-                for(NSDictionary* group in self.tableData)
-                {
-                    if([group[@"group"] isEqualToString:path])
-                    {
-                        for(NSDictionary* subItem in group[@"items"])
-                        {
-                            if([subItem[@"name"] isEqualToString:file])
-                            {
-                                if(!ignored) {
+            if (keepState) {
+                for (NSDictionary* group in self.tableData) {
+                    if ([group[@"group"] isEqualToString:path]) {
+                        for (NSDictionary* subItem in group[@"items"]) {
+                            if ([subItem[@"name"] isEqualToString:file]) {
+                                if (!ignored) {
                                     checked = [subItem[@"checked"] boolValue];
                                 }
                                 break;
@@ -236,7 +224,7 @@ NSArray* GetDirectoryContents(NSString* path)
                 @"ignored": @(ignored),
             }.mutableCopy;
             
-            if(isFolder) {
+            if (isFolder) {
                 [folders addObject:tableItem];
             } else {
                 [files addObject:tableItem];
@@ -266,10 +254,9 @@ NSArray* GetDirectoryContents(NSString* path)
     [self updateForRules:rules customed:customedRules newData:newData keepState:keepState];
     [self updateForRules:customedRules customed:nil newData:newData keepState:keepState];
 
-    NSComparator sorter = ^NSComparisonResult(NSDictionary* a, NSDictionary* b)
-    {
-        if([a[@"items"] count]!=0 && [b[@"items"] count]==0) return NSOrderedAscending;
-        if([a[@"items"] count]==0 && [b[@"items"] count]!=0) return NSOrderedDescending;
+    NSComparator sorter = ^NSComparisonResult(NSDictionary* a, NSDictionary* b) {
+        if ([a[@"items"] count] != 0 && [b[@"items"] count] == 0) return NSOrderedAscending;
+        if ([a[@"items"] count] == 0 && [b[@"items"] count] != 0) return NSOrderedDescending;
         
         return [a[@"group"] compare:b[@"group"]];
     };
@@ -281,11 +268,11 @@ NSArray* GetDirectoryContents(NSString* path)
 - (BOOL)checkFileInList:(NSString *)fileName List:(NSArray*)list {
     if (!list) return NO;
     for (NSObject* item in list) {
-        if([item isKindOfClass:NSString.class]) {
+        if ([item isKindOfClass:NSString.class]) {
             if ([fileName isEqualToString:(NSString*)item]) {
                 return YES;
             }
-        } else if([item isKindOfClass:NSDictionary.class]) {
+        } else if ([item isKindOfClass:NSDictionary.class]) {
             NSDictionary* condition = (NSDictionary*)item;
             NSString *name = condition[@"name"];
             NSString *match = condition[@"match"];
@@ -297,7 +284,7 @@ NSArray* GetDirectoryContents(NSString* path)
             } else if ([match isEqualToString:@"regexp"]) {
                 NSRegularExpression *regex = [[NSRegularExpression alloc] initWithPattern:name options:0 error:nil];
                 NSUInteger result = [regex numberOfMatchesInString:fileName options:0 range:NSMakeRange(0, fileName.length)];
-                if(result != 0) return YES;
+                if (result != 0) return YES;
             }
         }
     }
@@ -309,18 +296,17 @@ NSArray* GetDirectoryContents(NSString* path)
     
     [self.tableView.refreshControl beginRefreshing];
     
-    for(NSDictionary* group in [self.tableData copy]) {
-        for(NSDictionary* item in [group[@"items"] copy])
-        {
-            if(![item[@"checked"] boolValue]) continue;
+    for (NSDictionary* group in [self.tableData copy]) {
+        for (NSDictionary* item in [group[@"items"] copy]) {
+            if (![item[@"checked"] boolValue]) continue;
             
             NSLog(@"clean=%@", item);
             
             NSError* err = nil;
-            if(![NSFileManager.defaultManager removeItemAtPath:item[@"path"] error:&err]) {
+            if (![NSFileManager.defaultManager removeItemAtPath:item[@"path"] error:&err]) {
                 NSLog(@"clean failed: %@", err);
                 
-                if(geteuid()!=0 || getegid()!=0) {
+                if (geteuid() != 0 || getegid() != 0) {
                     NSLog(@"try RootUserRemoveItemAtPath: %@", item[@"path"]);
                     BOOL RootUserRemoveItemAtPath(NSString* path);
                     RootUserRemoveItemAtPath(item[@"path"]);
@@ -366,13 +352,11 @@ NSArray* GetDirectoryContents(NSString* path)
     NSDictionary *groupData = self.tableData[section];
     UITableViewHeaderFooterView* header = (UITableViewHeaderFooterView*)view;
     
-    if([groupData[@"error"] boolValue]) {
+    if ([groupData[@"error"] boolValue]) {
         header.textLabel.textColor = UIColor.systemRedColor;
-    }
-    else if([groupData[@"items"] count] > 0) {
+    } else if ([groupData[@"items"] count] > 0) {
         header.textLabel.textColor = UIColor.secondaryLabelColor;
-    }
-    else {
+    } else {
         header.textLabel.textColor = UIColor.tertiaryLabelColor;
     }
 }
@@ -388,7 +372,7 @@ NSArray* GetDirectoryContents(NSString* path)
     NSDictionary *item = items[indexPath.row];
     
     cell.textLabel.text = [NSString stringWithFormat:@"%@ %@", [item[@"isFolder"] boolValue] ? @"🗂️" : @"📄", item[@"name"]];
-    if([item[@"ignored"] boolValue]) {
+    if ([item[@"ignored"] boolValue]) {
         cell.textLabel.textColor = UIColor.grayColor;
     } else {
         cell.textLabel.textColor = UIColor.labelColor;
@@ -412,10 +396,8 @@ NSArray* GetDirectoryContents(NSString* path)
     return cell;
 }
 
-- (void)cellLongPress:(UIGestureRecognizer *)recognizer
-{
-    if (recognizer.state == UIGestureRecognizerStateBegan)
-    {
+- (void)cellLongPress:(UIGestureRecognizer *)recognizer {
+    if (recognizer.state == UIGestureRecognizerStateBegan) {
         long tag = recognizer.view.tag;
         NSIndexPath* indexPath = [NSIndexPath indexPathForRow:(tag & 0xFFFFFFFF) inSection:(tag >> 32)];
         
