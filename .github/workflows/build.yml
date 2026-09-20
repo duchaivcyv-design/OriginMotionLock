@@ -1,36 +1,30 @@
-name: Build and Release .deb
+name: Build and Package Theos App
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
 
 jobs:
   build:
     runs-on: macos-latest
-    permissions:
-      contents: write
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Checkout Repository
+      uses: actions/checkout@v4
 
-      - name: Setup Theos
-        run: |
-          git clone --recursive https://github.com/theos/theos.git $HOME/theos
+    - name: Setup Theos
+      run: |
+        git clone --recursive https://github.com/theos/theos.git $HOME/theos
 
-      - name: Install Theos SDKs
-        run: |
-          rm -rf $HOME/theos/sdks
-          git clone https://github.com/theos/sdks.git $HOME/theos/sdks
+    - name: Compile and Package
+      run: |
+        export THEOS=$HOME/theos
+        make package
 
-      - name: Build Package
-        run: |
-          export THEOS=$HOME/theos
-          make package
-
-      - name: Create Release and Upload
-        uses: softprops/action-gh-release@v1
-        with:
-          files: packages/*.deb
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: packages
+        path: packages/*.deb
