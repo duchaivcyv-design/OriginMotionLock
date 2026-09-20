@@ -1,7 +1,14 @@
+// ref https://github.com/XsF1re/FlyJB-App
+
 #import "SettingViewController.h"
 #include "AppDelegate.h"
 #include <sys/mount.h>
 #include <spawn.h>
+
+// Định nghĩa macro jbroot nếu chưa có sẵn trong project của bạn
+#ifndef jbroot
+#define jbroot(path) (path)
+#endif
 
 @interface SettingViewController ()
 
@@ -101,7 +108,6 @@
     NSDictionary* settings = [AppDelegate getDefaultsForKey:@"settings"];
     if ([item[@"type"] isEqualToString:@"switch"]) {
         UISwitch *theSwitch = [[UISwitch alloc] initWithFrame:CGRectZero];
-        // Đã sửa hoàn toàn lỗi cú pháp nháy đơn (@'status') thành nháy kép (@"status")
         if (item[@"status"]) {
             [theSwitch setOn:[item[@"status"] boolValue]];
         } else {
