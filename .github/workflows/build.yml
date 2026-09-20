@@ -23,10 +23,11 @@ jobs:
 
     - name: Create and Fix Debian Control Scripts
       run: |
-        # Chủ động tạo thư mục debian và file postinst chuẩn để Theos không tự sinh ra file lỗi quyền
         mkdir -p debian
+        rm -f debian/postinst
         echo -e "#!/bin/sh\nexit 0" > debian/postinst
         chmod 755 debian/postinst
+        ls -l debian/postinst
 
     - name: Compile and Package
       run: |
