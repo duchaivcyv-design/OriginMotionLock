@@ -23,11 +23,11 @@ static BOOL shouldBypassCurrentApplicationProcess(void) {
 
             // Danh sách toàn bộ các ứng dụng đã lấy từ ảnh của cậu
             NSArray *targetApps = @[
-                @"com.garena.game.fcmobilevn", // FC Mobile[span_6](start_span)[span_6](end_span)
-                @"com.dts.freefireth",        // Free Fire[span_7](start_span)[span_7](end_span)
-                @"vn.com.techcombank.bb.app", // Techcombank[span_8](start_span)[span_8](end_span)[span_9](start_span)[span_9](end_span)
-                @"com.mbmobile",             // MB Bank[span_10](start_span)[span_10](end_span)
-                @"vn.com.vng.zalopay",       // ZaloPay[span_11](start_span)[span_11](end_span)
+                @"com.garena.game.fcmobilevn", // FC Mobile[span_0](start_span)[span_0](end_span)
+                @"com.dts.freefireth",        // Free Fire[span_1](start_span)[span_1](end_span)
+                @"vn.com.techcombank.bb.app", // Techcombank[span_2](start_span)[span_2](end_span)[span_3](start_span)[span_3](end_span)
+                @"com.mbmobile",             // MB Bank[span_4](start_span)[span_4](end_span)
+                @"vn.com.vng.zalopay",       // ZaloPay[span_5](start_span)[span_5](end_span)
                 @"com.fpt.tpb.emobile"       // TPBank Mobile
             ];
 
@@ -159,7 +159,7 @@ static int replaced_open(const char *path, int oflag, ...) {
         if (pathString) {
             if ([pathString containsString:@"Cydia"] ||
                 [pathString containsString:@"Substrate"] ||
-                [pathString containsString:`apt`] ||
+                [pathString containsString:@"apt"] ||
                 [pathString containsString:@"jb"]) {
                 errno = ENOENT;
                 return -1;
