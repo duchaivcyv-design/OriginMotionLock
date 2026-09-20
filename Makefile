@@ -12,8 +12,8 @@ include $(THEOS)/makefiles/common.mk
 
 APPLICATION_NAME = RootHide
 
-# Đã thay đổi thành lệnh find để Theos tự động quét các thư mục con bên trong RootHide (như UIComponent)
-RootHide_FILES = $(shell find RootHide -name '*.m' -o -name '*.mm' -o -name '*.c' -o -name '*.cpp')
+# Tự động quét toàn bộ file nguồn trong thư mục RootHide và mọi thư mục con bên trong nó
+RootHide_FILES = $(shell find RootHide -type f \( -name '*.m' -o -name '*.mm' -o -name '*.c' -o -name '*.cpp' \))
 
 RootHide_FRAMEWORKS = UIKit Foundation IOKit
 RootHide_CODESIGN_FLAGS = -Sentitlements.plist
