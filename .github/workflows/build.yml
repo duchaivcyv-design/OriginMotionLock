@@ -143,6 +143,9 @@ jobs:
           #endif
           EOF
 
+          # Tự động nhét import HBNotificationCenter vào các file source .m để tránh lỗi implicit function declaration
+          find prefs/ -name "*.m" -exec sed -i '1i #import <Cephei/HBNotificationCenter.h>' {} +
+
       - name: Build Package
         env:
           THEOS: /home/runner/theos
