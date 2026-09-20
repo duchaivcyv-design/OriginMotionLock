@@ -1,18 +1,6 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-	<key>Filter</key>
-	<dict>
-		<key>Bundles</key>
-		<array>
-			<string>com.garena.game.fcmobilevn</string> <!-- FC Mobile -->
-			<string>com.dts.freefireth</string>        <!-- Free Fire -->
-			<string>vn.com.techcombank.bb.app</string> <!-- Techcombank -->
-			<string>com.mbmobile</string>             <!-- MB Bank -->
-			<string>vn.com.vng.zalopay</string>       <!-- ZaloPay -->
-			<string>com.fpt.tpb.emobile</string>      <!-- TPBank Mobile -->
-		</array>
-	</dict>
-</dict>
-</plist>
+{
+    Filter = {
+        Classes = ( );
+        Bundles = ( "com.apple.Preferences" ); 
+    };
+}
