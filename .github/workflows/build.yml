@@ -77,11 +77,11 @@ jobs:
 
       - name: Install Cephei Headers
         run: |
-          rm -rf /tmp/Cephei
-          git clone --depth=1 https://github.com/AdamDemasi/Cephei.git /tmp/Cephei
+          wget -q https://github.com/AdamDemasi/Cephei/archive/refs/heads/master.zip -O /tmp/cephei.zip
+          unzip -q /tmp/cephei.zip -d /tmp/
           mkdir -p $HOME/theos/include
-          cp -r /tmp/Cephei/Cephei $HOME/theos/include/
-          cp -r /tmp/Cephei/CepheiUI $HOME/theos/include/
+          cp -r /tmp/Cephei-master/Cephei $HOME/theos/include/
+          cp -r /tmp/Cephei-master/CepheiUI $HOME/theos/include/
 
       - name: Build Package
         env:
