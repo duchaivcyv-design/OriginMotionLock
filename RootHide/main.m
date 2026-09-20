@@ -89,7 +89,8 @@ int spawn(const char* path, const char** argv, const char** envp, void(^std_out)
     dispatch_resume(stdOutSource);
     dispatch_resume(stdErrSource);
     
-    int spawnError = posix_spawn(&pid, path, &action, &attr, argv, envp);
+    // Đã ép kiểu tường minh (char * const *) để tránh lỗi Warning/Error discards qualifiers
+    int spawnError = posix_spawn(&pid, path, &action, &attr, (char * const *)argv, (char * const *)envp);
     NSLog(@"spawn ret=%d, pid=%d", spawnError, pid);
     
     posix_spawnattr_destroy(&attr);
@@ -140,18 +141,16 @@ int spawnRoot(NSString* path, NSArray* args, NSString** stdOut, NSString** stdEr
     argsC[argCount] = NULL;
 
     
-    __block NSMutableString* outString=nil;
-    __block NSMutableString* errString=nil;
+    // Khai báo __block để giải quyết triệt để lỗi block captures an autoreleasing out-parameter
+    __block NSMutableString* outString = stdOut ? [NSMutableString new] : nil;
+    __block NSMutableString* errString = stdErr ? [NSMutableString new] : nil;
     
-    if(stdOut) outString = [NSMutableString new];
-    if(stdErr) errString = [NSMutableString new];
-    
-    int retval = spawn(path.fileSystemRepresentation, argsC, environ, ^(char* outstr, int length){
+    int retval = spawn(path.fileSystemRepresentation, (const char **)argsC, (const char **)environ, ^(char* outstr, int length){
         NSString *str = [[NSString alloc] initWithBytes:outstr length:length encoding:NSASCIIStringEncoding];
-        if(stdOut) [outString appendString:str];
+        if(outString && str) [outString appendString:str];
     }, ^(char* errstr, int length){
         NSString *str = [[NSString alloc] initWithBytes:errstr length:length encoding:NSASCIIStringEncoding];
-        if(stdErr) [errString appendString:str];
+        if(errString && str) [errString appendString:str];
     });
     
     if(stdOut) *stdOut = outString.copy;
@@ -242,8 +241,9 @@ void killAllForBundle(const char* bundlePath)
             char realExecutablePath[PATH_MAX];
             if (realpath(executablePath, realExecutablePath)
                 && strncmp(realExecutablePath, realBundlePath, realBundlePathLen) == 0) {
-                int ret = kill(pid, SIGKILL);
-                NSLog(@"killAllForBundle %s -> %d", realExecutablePath, ret);
+                // Xóa bỏ biến int ret không dùng tới để tránh lỗi unused variable
+                kill(pid, SIGKILL);
+                NSLog(@"killAllForBundle %s -> killed", realExecutablePath);
             }
         }
     }
@@ -253,7 +253,6 @@ void killAllForBundle(const char* bundlePath)
 NSString* RootUserClearAppData(AppInfo* app) {
     NSString* error=nil;
     NSString* result=nil;
-    // Đảm bảo đường dẫn thực thi luôn trỏ chuẩn qua phân vùng Rootless /var/jb nếu cần thiết
     int ret = spawnRoot(NSBundle.mainBundle.executablePath, @[@"clearAppData", app.bundleIdentifier], &result, &error);
     if(ret != 0) {
         NSLog(@"removeItemAtPath failed: %@", error);
