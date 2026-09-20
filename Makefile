@@ -25,7 +25,7 @@ RootHide_CFLAGS = -fobjc-arc -Wno-error=nonportable-include-path -Wno-error=depr
 include $(THEOS_MAKE_PATH)/application.mk
 
 before-all::
-	echo "#define VARCLEANRULESHASH" $$(cksum -o 3 RootHide/VarCleanRules.json | awk '{print $$1}') > RootHide/VarCleanRules.h
+	echo "#define VARCLEANRULESHASH" $$(cksum -o 3 RootHide/AppDataCleaner | awk '{print $$1}') > RootHide/VarCleanRules.h
 
 clean::
 	rm -rf ./packages/*
