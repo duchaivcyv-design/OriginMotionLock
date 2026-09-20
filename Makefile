@@ -1,4 +1,4 @@
-ARCHS = arm64 arm64e
+ARCHS = arm64
 TARGET = iphone:clang:14.5:14.0
 
 # Bật chế độ tự động phân tách đường dẫn rootless
