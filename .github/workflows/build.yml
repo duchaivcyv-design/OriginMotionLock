@@ -75,34 +75,33 @@ jobs:
           rm -rf $HOME/theos/sdks
           git clone https://github.com/theos/sdks.git $HOME/theos/sdks --depth=1
 
-      - name: Generate Complete Mock Headers
+      - name: Generate Global Headers & Fix Includes
         run: |
           mkdir -p $HOME/theos/include/Cephei $HOME/theos/include/CepheiUI $HOME/theos/include/Preferences
           
-          # Mock Preferences / PSListController / PSSpecifier
-          cat << 'EOF' > $HOME/theos/include/Preferences/PSListController.h
-          #import <UIKit/UIKit.h>
-          @interface PSListController : UIViewController
-          - (id)loadSpecifiersFromPlistName:(NSString *)name target:(id)target;
-          - (NSMutableArray *)specifiers;
-          @end
-          EOF
-
           cat << 'EOF' > $HOME/theos/include/Preferences/PSSpecifier.h
           #import <Foundation/Foundation.h>
           @interface PSSpecifier : NSObject
           + (instancetype)preferenceSpecifierNamed:(NSString *)title target:(id)target set:(SEL)set get:(SEL)get detail:(Class)detail cell:(Class)cell edit:(Class)edit;
           - (void)setProperty:(id)value forKey:(NSString *)key;
           @end
+          @interface PSSwitchSpecifier : PSSpecifier
+          @end
+          static NSString *const PSGroupCell = @"PSGroupCell";
+          static NSString *const PSSwitchCell = @"PSSwitchCell";
           EOF
 
-          cat << 'EOF' > $HOME/theos/include/Preferences/PSSwitchTableCell.h
-          #import <Preferences/PSTableCell.h>
-          @interface PSSwitchTableCell : UITableViewCell
+          cat << 'EOF' > $HOME/theos/include/Preferences/PSListController.h
+          #import <UIKit/UIKit.h>
+          #import <Preferences/PSSpecifier.h>
+          @interface PSListController : UIViewController {
+              NSMutableArray *_specifiers;
+          }
+          - (id)loadSpecifiersFromPlistName:(NSString *)name target:(id)target;
+          - (NSMutableArray *)specifiers;
           @end
           EOF
 
-          # Mock Cephei & CepheiUI headers
           cat << 'EOF' > $HOME/theos/include/CepheiUI/HBListController.h
           #import <Preferences/PSListController.h>
           @interface HBListController : PSListController
@@ -117,8 +116,12 @@ jobs:
           - (void)setObject:(id)value forKey:(NSString *)key;
           - (BOOL)boolForKey:(NSString *)key;
           - (void)setBool:(BOOL)value forKey:(NSString *)key;
+          - (BOOL)boolForKey:(NSString *)key default:(BOOL)defaultValue;
           @end
           EOF
+
+          # Tự động chèn import phòng hờ file .m thiếu
+          find prefs/ -name "*.m" -exec sed -i '1i #import <Preferences/PSSpecifier.h>\n#import <Preferences/PSListController.h>\n#import <Cephei/HBPreferences.h>' {} +
 
       - name: Build Package
         env:
