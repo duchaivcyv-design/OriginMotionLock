@@ -1,0 +1,5 @@
+module roothide {
+  header "roothide.h"
+
+  export *
+}
