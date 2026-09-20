@@ -17,8 +17,8 @@ RootHide_FRAMEWORKS = UIKit Foundation IOKit
 RootHide_CODESIGN_FLAGS = -Sentitlements.plist
 RootHide_INSTALL_PATH = /Applications
 
-# Thêm -DkIOMainPortDefault=kIOMasterPortDefault để tự động sửa lỗi IOKit
-RootHide_CFLAGS = -fobjc-arc -Wno-error=nonportable-include-path -Wno-error=deprecated-declarations -Wno-error=undeclared-selector -DkIOMainPortDefault=kIOMasterPortDefault
+# Thêm -Wno-error=shadow-ivar để bỏ qua lỗi trùng tên biến
+RootHide_CFLAGS = -fobjc-arc -Wno-error=nonportable-include-path -Wno-error=deprecated-declarations -Wno-error=undeclared-selector -Wno-error=shadow-ivar -DkIOMainPortDefault=kIOMasterPortDefault
 
 include $(THEOS_MAKE_PATH)/application.mk
 
