@@ -16,9 +16,7 @@ jobs:
 
       - name: Setup Theos
         run: |
-          if [ ! -d "$HOME/theos" ]; then
-            git clone --recursive https://github.com/theos/theos.git $HOME/theos
-          fi
+          git clone --recursive https://github.com/theos/theos.git $HOME/theos
 
       - name: Install Theos SDKs
         run: |
