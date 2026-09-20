@@ -50,26 +50,27 @@ BOOL isDefaultInstallationPath(NSString* path)
 -(void)searchBarSearchButtonClicked:(UISearchBar *)searchBar {
     [searchBar resignFirstResponder];
 }
+
 - (void)searchBarCancelButtonClicked:(UISearchBar *)searchBar {
-    if(isFiltered) {
+    if (isFiltered) {
         self->appsArray = [self sortAppList:YES];
     }
-    isFiltered = false;
+    isFiltered = NO;
     [self.tableView reloadData];
 }
 
 -(void)reloadSearch {
     NSString* searchText = searchController.searchBar.text;
-    if(searchText.length == 0) {
-        isFiltered = false;
+    if (searchText.length == 0) {
+        isFiltered = NO;
     } else {
-        isFiltered = true;
+        isFiltered = YES;
         filteredApps = [[NSMutableArray alloc] init];
         searchText = searchText.lowercaseString;
         for (AppInfo* app in appsArray) {
             NSRange nameRange = [app.name.lowercaseString rangeOfString:searchText options:NSCaseInsensitiveSearch];
             NSRange bundleIdRange = [app.bundleIdentifier.lowercaseString rangeOfString:searchText options:NSCaseInsensitiveSearch];
-            if(nameRange.location != NSNotFound || bundleIdRange.location != NSNotFound) {
+            if (nameRange.location != NSNotFound || bundleIdRange.location != NSNotFound) {
                 [filteredApps addObject:app];
             }
         }
@@ -80,7 +81,6 @@ BOOL isDefaultInstallationPath(NSString* path)
     [self reloadSearch];
     [self.tableView reloadData];
 }
-
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -93,7 +93,7 @@ BOOL isDefaultInstallationPath(NSString* path)
     self->blacklistDisabled = [[AppDelegate getDefaultsForKey:@"blacklistDisabled"] boolValue];
     self->spinlockFixApplied = [[AppDelegate getDefaultsForKey:@"spinlockFixApplied"] boolValue];
     
-    isFiltered = false;
+    isFiltered = NO;
     
     searchController = [[UISearchController alloc] initWithSearchResultsController:nil];
     searchController.searchBar.delegate = self;
@@ -117,7 +117,7 @@ BOOL isDefaultInstallationPath(NSString* path)
 
 - (void)startRefresh:(BOOL)resort {
     [self.tableView.refreshControl beginRefreshing];
-    dispatch_async(dispatch_get_global_queue(0, 0), ^{
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         NSArray* newData = [self updateData];
         dispatch_async(dispatch_get_main_queue(), ^{
             self->applications = newData;
@@ -146,28 +146,24 @@ BOOL isDefaultInstallationPath(NSString* path)
 - (NSArray*)sortAppList:(BOOL)sortWithStatus {
     NSArray *result = nil;
     
-    if(sortWithStatus)
-    {
+    if (sortWithStatus) {
         NSMutableDictionary* appconfig = [AppDelegate getDefaultsForKey:@"appconfig"];
         
         result = [applications sortedArrayUsingComparator:^NSComparisonResult(AppInfo *app1, AppInfo *app2) {
-
             BOOL enabled1 = [[appconfig objectForKey:app1.bundleIdentifier] boolValue];
             BOOL enabled2 = [[appconfig objectForKey:app2.bundleIdentifier] boolValue];
             
-            if((enabled1&&!enabled2) || (!enabled1&&enabled2)) {
+            if ((enabled1 && !enabled2) || (!enabled1 && enabled2)) {
                 return [@(enabled2) compare:@(enabled1)];
             }
             
-            if(app1.isHiddenApp || app2.isHiddenApp) {
-                return (enabled1&&enabled2) ? [@(app2.isHiddenApp) compare:@(app1.isHiddenApp)] : [@(app1.isHiddenApp) compare:@(app2.isHiddenApp)];
+            if (app1.isHiddenApp || app2.isHiddenApp) {
+                return (enabled1 && enabled2) ? [@(app2.isHiddenApp) compare:@(app1.isHiddenApp)] : [@(app1.isHiddenApp) compare:@(app2.isHiddenApp)];
             }
             
             return [app1.name localizedStandardCompare:app2.name];
         }];
-    }
-    else
-    {
+    } else {
         NSMutableArray *newapps = [NSMutableArray array];
         [applications enumerateObjectsUsingBlock:^(AppInfo *newobj, NSUInteger idx, BOOL * _Nonnull stop) {
             __block BOOL hasBeenContained = NO;
@@ -202,13 +198,11 @@ BOOL isDefaultInstallationPath(NSString* path)
 - (NSArray*)updateData {
     NSMutableArray* applications = [NSMutableArray new];
     NSArray* allInstalledApplications = [LSApplicationWorkspace.defaultWorkspace allInstalledApplications];
-    for(id proxy in allInstalledApplications)
-    {
+    for (id proxy in allInstalledApplications) {
         AppInfo* app = [AppInfo appWithPrivateProxy:proxy];
-        if(!app.isHiddenApp
+        if (!app.isHiddenApp
            && ![app.bundleIdentifier hasPrefix:@"com.apple."]
-           && isDefaultInstallationPath(app.bundleURL.path))
-        {
+           && isDefaultInstallationPath(app.bundleURL.path)) {
             [applications addObject:app];
         }
     }
@@ -223,7 +217,7 @@ BOOL isDefaultInstallationPath(NSString* path)
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return isFiltered? filteredApps.count : appsArray.count;
+    return isFiltered ? filteredApps.count : appsArray.count;
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
@@ -233,6 +227,7 @@ BOOL isDefaultInstallationPath(NSString* path)
 - (nullable UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
     return [[UIView alloc] init];
 }
+
 - (nullable UIView *)tableView:(UITableView *)tableView viewForFooterInSection:(NSInteger)section {
     return [[UIView alloc] init];
 }
@@ -250,9 +245,12 @@ BOOL isDefaultInstallationPath(NSString* path)
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:@"Cell"];
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"Cell"];
+    if (!cell) {
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:@"Cell"];
+    }
     
-    AppInfo* app = isFiltered? filteredApps[indexPath.row] : appsArray[indexPath.row];
+    AppInfo* app = isFiltered ? filteredApps[indexPath.row] : appsArray[indexPath.row];
     
     UIImage *image = app.icon;
     cell.imageView.image = [self imageWithImage:image scaledToSize:CGSizeMake(40, 40)];
@@ -266,36 +264,36 @@ BOOL isDefaultInstallationPath(NSString* path)
     [theSwitch setOn:[[appconfig objectForKey:app.bundleIdentifier] boolValue]];
     [theSwitch addTarget:self action:@selector(switchChanged:) forControlEvents:UIControlEventValueChanged];
     
-    if(blacklistDisabled) {
+    if (blacklistDisabled) {
         [theSwitch setOn:NO];
     }
     
     cell.accessoryView = theSwitch;
     
+    // Gỡ bỏ gesture cũ nếu có trước khi thêm mới (tránh việc add nhiều lần khi cell bị reuse)
+    for (UIGestureRecognizer *subRecognizer in cell.contentView.gestureRecognizers) {
+        [cell.contentView removeGestureRecognizer:subRecognizer];
+    }
+    
     UILongPressGestureRecognizer *gest = [[UILongPressGestureRecognizer alloc]
                                           initWithTarget:self action:@selector(cellLongPress:)];
     [cell.contentView addGestureRecognizer:gest];
-    gest.view.tag = indexPath.row | indexPath.section<<32;
+    gest.view.tag = indexPath.row | (indexPath.section << 32);
     gest.minimumPressDuration = 1;
     
     return cell;
 }
 
-- (void)cellLongPress:(UIGestureRecognizer *)recognizer
-{
-    if (recognizer.state == UIGestureRecognizerStateBegan)
-    {
+- (void)cellLongPress:(UIGestureRecognizer *)recognizer {
+    if (recognizer.state == UIGestureRecognizerStateBegan) {
         long tag = recognizer.view.tag;
-        NSIndexPath* indexPath = [NSIndexPath indexPathForRow:tag&0xFFFFFFFF inSection:tag>>32];
+        NSIndexPath* indexPath = [NSIndexPath indexPathForRow:(tag & 0xFFFFFFFF) inSection:(tag >> 32)];
         
-        AppInfo* app = isFiltered? filteredApps[indexPath.row] : appsArray[indexPath.row];
+        AppInfo* app = isFiltered ? filteredApps[indexPath.row] : appsArray[indexPath.row];
         
-        UIAlertController* appMenuAlert = [UIAlertController alertControllerWithTitle:app.name?:@"" message:app.bundleIdentifier?:@"" preferredStyle:UIAlertControllerStyleActionSheet];
+        UIAlertController* appMenuAlert = [UIAlertController alertControllerWithTitle:app.name ?: @"" message:app.bundleIdentifier ?: @"" preferredStyle:UIAlertControllerStyleActionSheet];
         
-        // Đã xóa bỏ nút "Clear App Data" do tính năng clearAppData không còn tồn tại.
-        
-        UIAlertAction* cancelAction = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:^(UIAlertAction* action)
-        {
+        UIAlertAction* cancelAction = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:^(UIAlertAction* action) {
         }];
         [appMenuAlert addAction:cancelAction];
         
@@ -312,31 +310,27 @@ BOOL isDefaultInstallationPath(NSString* path)
     CGPoint pos = [switchInCell convertPoint:switchInCell.bounds.origin toView:self.tableView];
     NSIndexPath *indexPath = [self.tableView indexPathForRowAtPoint:pos];
     
-    AppInfo* app = isFiltered? filteredApps[indexPath.row] : appsArray[indexPath.row];
+    if (!indexPath) return;
     
-    if(blacklistDisabled)
-    {
+    AppInfo* app = isFiltered ? filteredApps[indexPath.row] : appsArray[indexPath.row];
+    
+    if (blacklistDisabled) {
         [switchInCell setOn:NO];
         
         NSString* msg = Localized(@"Blacklist is not supported in current environment.");
-        if([NSFileManager.defaultManager fileExistsAtPath:jbroot(@"/.bootstrapped")]
-           || [NSFileManager.defaultManager fileExistsAtPath:jbroot(@"/.thebootstrapped")])
-        {
+        if ([NSFileManager.defaultManager fileExistsAtPath:jbroot(@"/.bootstrapped")]
+           || [NSFileManager.defaultManager fileExistsAtPath:jbroot(@"/.thebootstrapped")]) {
             msg = Localized(@"Apps are blacklisted by default in current environment, just disable tweaks for this app in the AppList of Bootstrap.");
         }
         
         [AppDelegate showMessage:msg title:@""];
-        
         return;
     }
     
-    
-    if([NSFileManager.defaultManager fileExistsAtPath:jbroot(@"/.thebootstrapped")])
-    {
-        if([NSFileManager.defaultManager fileExistsAtPath:[app.bundleURL.path stringByAppendingString:@"/../.appbackup"]]
+    if ([NSFileManager.defaultManager fileExistsAtPath:jbroot(@"/.thebootstrapped")]) {
+        if ([NSFileManager.defaultManager fileExistsAtPath:[app.bundleURL.path stringByAppendingString:@"/../.appbackup"]]
            || [NSFileManager.defaultManager fileExistsAtPath:[app.bundleURL.path stringByAppendingPathExtension:@"appbackup"]]
-           || [NSFileManager.defaultManager fileExistsAtPath:[app.bundleURL.path stringByAppendingPathComponent:@".jbroot"]])
-        {
+           || [NSFileManager.defaultManager fileExistsAtPath:[app.bundleURL.path stringByAppendingPathComponent:@".jbroot"]]) {
             [AppDelegate showMessage:Localized(@"This app is tweaked by Bootstrap, please disable tweak for it in the AppList of Bootstrap first.") title:@""];
             [switchInCell setOn:NO];
             return;
@@ -344,9 +338,9 @@ BOOL isDefaultInstallationPath(NSString* path)
     }
     
 #ifdef __arm64e__
-    if (spinlockFixApplied && NSProcessInfo.processInfo.operatingSystemVersion.majorVersion==15) {
+    if (spinlockFixApplied && NSProcessInfo.processInfo.operatingSystemVersion.majorVersion == 15) {
         static BOOL Alerted = NO;
-        if(!Alerted && switchInCell.on) {
+        if (!Alerted && switchInCell.on) {
             Alerted = YES;
             [AppDelegate showMessage:Localized(@"\nFor iOS15 A12+ devices:\n\nthe blacklisted app will have its app extension disabled, and may cause a spinlock panic when the app is running in the foreground/background.\n\nYou can first try disabling tweak injection for this app in Choicy, and only blacklist the app if it doesn't work.") title:Localized(@"Warning")];
         }
@@ -354,12 +348,11 @@ BOOL isDefaultInstallationPath(NSString* path)
 #endif
     
     NSMutableDictionary* appconfig = [AppDelegate getDefaultsForKey:@"appconfig"];
-    if(!appconfig) appconfig = [[NSMutableDictionary alloc] init];
+    if (!appconfig) appconfig = [[NSMutableDictionary alloc] init];
     [appconfig setObject:@(switchInCell.on) forKey:app.bundleIdentifier];
     [AppDelegate setDefaults:appconfig forKey:@"appconfig"];
     
     void killAllForBundle(const char* bundlePath);
     killAllForBundle(app.bundleURL.path.UTF8String);
-    
 }
 @end
