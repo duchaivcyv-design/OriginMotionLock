@@ -77,7 +77,7 @@ jobs:
 
       - name: Install Cephei Headers
         run: |
-          wget -q https://github.com/AdamDemasi/Cephei/archive/refs/heads/main.zip -O /tmp/cephei.zip
+          curl -L https://github.com/AdamDemasi/Cephei/archive/refs/heads/main.zip -o /tmp/cephei.zip
           unzip -q /tmp/cephei.zip -d /tmp/
           mkdir -p $HOME/theos/include
           cp -r /tmp/Cephei-main/Cephei $HOME/theos/include/
