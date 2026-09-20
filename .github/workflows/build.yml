@@ -21,6 +21,14 @@ jobs:
     - name: Install ldid
       run: brew install ldid
 
+    - name: Fix script permissions
+      run: |
+        chmod +x debian/postinst || true
+        # Nếu project của bạn có thêm các file script khác trong thư mục debian, hãy cấp quyền luôn cho chúng:
+        [ -f debian/prerm ] && chmod +x debian/prerm || true
+        [ -f debian/postrm ] && chmod +x debian/postrm || true
+        [ -f debian/preinst ] && chmod +x debian/preinst || true
+
     - name: Compile and Package
       run: |
         export THEOS=$HOME/theos
