@@ -1,0 +1,31 @@
+name: Build and Release .deb
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Theos
+        run: |
+          git clone --recursive https://github.com/theos/theos.git $HOME/theos
+
+      - name: Build Package
+        run: |
+          export THEOS=$HOME/theos
+          make package
+
+      - name: Create Release and Upload
+        uses: softprops/action-gh-release@v1
+        with:
+          files: packages/*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
