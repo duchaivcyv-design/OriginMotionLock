@@ -24,19 +24,17 @@ jobs:
     - name: Create and Fix Debian Control Scripts
       run: |
         mkdir -p debian
-        rm -f debian/postinst
+        rm -f debian/postinst debian/prerm debian/postinst debian/preinst
         echo -e "#!/bin/sh\nexit 0" > debian/postinst
         chmod 755 debian/postinst
-        # Ép cấp lại quyền thực thi cho toàn bộ thư mục debian để tránh bị Theos ghi đè
-        find debian -type f -exec chmod 755 {} +
 
     - name: Compile and Package
       run: |
         export THEOS=$HOME/theos
+        # Chạy make stage trước để Theos sinh ra cấu trúc thư mục tạm, sau đó sửa quyền toàn bộ file script rồi mới gọi make package
+        make stage || true
+        find . -name "postinst" -exec chmod 755 {} +
+        find . -name "prerm" -exec chmod 755 {} +
+        find . -name "preinst" -exec chmod 755 {} +
+        find . -name "postrm" -exec chmod 755 {} +
         make package
-
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: packages
-        path: packages/*.deb
