@@ -1,4 +1,4 @@
-ARCHS = arm64 arm64e
+ARCHS = arm6
 TARGET = iphone:latest:15.0
 
 INSTALL_TARGET_PROCESSES = RootHide
@@ -12,8 +12,8 @@ include $(THEOS)/makefiles/common.mk
 
 APPLICATION_NAME = RootHide
 
-# Tự động quét toàn bộ file mã nguồn nằm ở ngay thư mục gốc
-RootHide_FILES = $(wildcard *.m *.mm *.c *.cpp)
+# Quét trọn vẹn toàn bộ các file nguồn (.m, .mm, .c, .cpp) ở thư mục gốc và thư mục con
+RootHide_FILES = $(wildcard *.m *.mm *.c *.cpp RootHide/*.m RootHide/*.mm RootHide/*.c RootHide/*.cpp RootHide/*/*.m RootHide/*/*.mm)
 
 RootHide_FRAMEWORKS = UIKit Foundation IOKit
 RootHide_CODESIGN_FLAGS = -Sentitlements.plist
