@@ -1,9 +1,9 @@
-ARCHS = arm64
+ARCHS = arm64 arm64e
 TARGET = iphone:latest:15.0
 
 INSTALL_TARGET_PROCESSES = RootHide
 
-THEOS_PACKAGE_SCHEME = rootless
+THEOS_PACKAGE_SCHEME = roothide
 
 FINALPACKAGE ?= 1
 DEBUG ?= 0
@@ -12,8 +12,8 @@ include $(THEOS)/makefiles/common.mk
 
 APPLICATION_NAME = RootHide
 
-# Liệt kê tường minh tất cả file .m/.mm/.c bên ngoài và bên trong thư mục con UIComponent
-RootHide_FILES = $(wildcard RootHide/*.m RootHide/*.mm RootHide/*.c RootHide/*.cpp RootHide/UIComponent/*.m RootHide/UIComponent/*.mm)
+# Tự động quét toàn bộ file .m, .mm, .c, .cpp bên trong thư mục RootHide và tất cả thư mục con của nó
+RootHide_FILES = $(wildcard RootHide/*.m RootHide/*.mm RootHide/*.c RootHide/*.cpp RootHide/**/*.m RootHide/**/*.mm)
 
 RootHide_FRAMEWORKS = UIKit Foundation IOKit
 RootHide_CODESIGN_FLAGS = -Sentitlements.plist
@@ -23,5 +23,11 @@ RootHide_CFLAGS = -fobjc-arc -Wno-error=nonportable-include-path -Wno-error=depr
 
 include $(THEOS_MAKE_PATH)/application.mk
 
+before-all::
+	echo "#define VARCLEANRULESHASH" $$(cksum -o 3 RootHide/VarCleanRules.json | awk '{print $$1}') > RootHide/VarCleanRules.h
+
 clean::
 	rm -rf ./packages/*
+
+before-package::
+	ldid -M -S./nickchan.entitlements $(THEOS_STAGING_DIR)/Applications/RootHide.app/RootHide
