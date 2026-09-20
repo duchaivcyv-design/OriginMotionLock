@@ -17,7 +17,7 @@ RootHide_FRAMEWORKS = UIKit Foundation IOKit
 RootHide_CODESIGN_FLAGS = -Sentitlements.plist
 RootHide_INSTALL_PATH = /Applications
 
-# Gom toàn bộ cờ bỏ lỗi và macro jbroot vào đây
+# Gom toàn bộ cờ bỏ lỗi, định nghĩa macro jbroot và ép xử lý lỗi nháy đơn
 RootHide_CFLAGS = -fobjc-arc \
 	-Wno-error=nonportable-include-path \
 	-Wno-error=deprecated-declarations \
@@ -30,6 +30,7 @@ RootHide_CFLAGS = -fobjc-arc \
 	-Wno-error=int-conversion \
 	-Wno-error=multichar \
 	-Wno-error=constant-conversion \
+	-Wno-error=backslash-newline-escape \
 	-Djbroot\(path\)=path \
 	-DkIOMainPortDefault=kIOMasterPortDefault
 
