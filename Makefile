@@ -12,11 +12,13 @@ include $(THEOS)/makefiles/common.mk
 
 APPLICATION_NAME = RootHide
 
-# Tự động quét tất cả các file code nằm trong thư mục RootHide/
 RootHide_FILES = $(wildcard RootHide/*.m RootHide/*.mm RootHide/*.c RootHide/*.cpp)
-RootHide_FRAMEWORKS = UIKit Foundation
+RootHide_FRAMEWORKS = UIKit Foundation IOKit
 RootHide_CODESIGN_FLAGS = -Sentitlements.plist
 RootHide_INSTALL_PATH = /Applications
+
+# Thêm cờ này để bỏ qua các lỗi cảnh báo/deprecated khi build trên SDK mới
+RootHide_CFLAGS = -fobjc-arc -Wno-error=nonportable-include-path -Wno-error=deprecated-declarations -Wno-error=undeclared-selector
 
 include $(THEOS_MAKE_PATH)/application.mk
 
