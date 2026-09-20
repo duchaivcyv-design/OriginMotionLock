@@ -20,13 +20,10 @@ jobs:
             git clone --recursive https://github.com/theos/theos.git $HOME/theos
           fi
 
-      - name: Install/Update Theos SDKs
+      - name: Install Theos SDKs
         run: |
-          if [ -d "$HOME/theos/sdks/.git" ]; then
-            git -C $HOME/theos/sdks pull
-          else
-            git clone https://github.com/theos/sdks.git $HOME/theos/sdks
-          fi
+          rm -rf $HOME/theos/sdks
+          git clone https://github.com/theos/sdks.git $HOME/theos/sdks
 
       - name: Build Package
         run: |
