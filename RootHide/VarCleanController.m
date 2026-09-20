@@ -1,6 +1,6 @@
 #import "varCleanController.h"
 #include "AppDelegate.h"
-#import "ZFCheckbox.h"
+#import "UIComponent/ZFCheckbox.h"
 
 @interface varCleanController ()
 @property (nonatomic, retain) NSMutableArray* tableData;
