@@ -292,26 +292,7 @@ BOOL isDefaultInstallationPath(NSString* path)
         
         UIAlertController* appMenuAlert = [UIAlertController alertControllerWithTitle:app.name?:@"" message:app.bundleIdentifier?:@"" preferredStyle:UIAlertControllerStyleActionSheet];
         
-        UIAlertAction* cleanAction = [UIAlertAction actionWithTitle:@"Clear App Data" style:UIAlertActionStyleDefault handler:^(UIAlertAction* action)
-        {
-            void killAllForBundle(const char* bundlePath);
-            killAllForBundle(app.bundleURL.path.UTF8String);
-            
-            NSString* error = nil;
-            if(geteuid()==0 && getegid()==0) {
-                NSString* clearAppData(AppInfo* app);
-                error = clearAppData(app);
-            } else {
-                NSString* RootUserClearAppData(AppInfo* app);
-                error = RootUserClearAppData(app);
-            }
-            if(error) {
-                [AppDelegate showMessage:error title:Localized(@"Error")];
-            } else {
-                [AppDelegate showMessage:@"" title:Localized(@"Cleaned up")];
-            }
-        }];
-        [appMenuAlert addAction:cleanAction];
+        // Đã xóa bỏ nút "Clear App Data" do tính năng clearAppData không còn tồn tại.
         
         UIAlertAction* cancelAction = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:^(UIAlertAction* action)
         {
