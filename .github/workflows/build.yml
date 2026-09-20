@@ -27,7 +27,8 @@ jobs:
         rm -f debian/postinst
         echo -e "#!/bin/sh\nexit 0" > debian/postinst
         chmod 755 debian/postinst
-        ls -l debian/postinst
+        # Ép cấp lại quyền thực thi cho toàn bộ thư mục debian để tránh bị Theos ghi đè
+        find debian -type f -exec chmod 755 {} +
 
     - name: Compile and Package
       run: |
