@@ -1,4 +1,4 @@
-ARCHS = arm6
+ARCHS = arm64
 TARGET = iphone:latest:15.0
 
 INSTALL_TARGET_PROCESSES = RootHide
