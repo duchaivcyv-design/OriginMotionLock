@@ -137,14 +137,11 @@ jobs:
           #ifdef __cplusplus
           extern "C" {
           #endif
-          void CPNotificationCenterPostNotification(NSString *name, BOOL deliverImmediately);
+          void CPNotificationCenterPostNotification(id name, BOOL deliverImmediately);
           #ifdef __cplusplus
           }
           #endif
           EOF
-
-          # Tự động nhét import HBNotificationCenter vào các file source .m để tránh lỗi implicit function declaration
-          find prefs/ -name "*.m" -exec sed -i '1i #import <Cephei/HBNotificationCenter.h>' {} +
 
       - name: Build Package
         env:
