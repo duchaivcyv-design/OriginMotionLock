@@ -101,7 +101,8 @@
     NSDictionary* settings = [AppDelegate getDefaultsForKey:@"settings"];
     if ([item[@"type"] isEqualToString:@"switch"]) {
         UISwitch *theSwitch = [[UISwitch alloc] initWithFrame:CGRectZero];
-        if (item[@'status']) {
+        // Đã sửa hoàn toàn lỗi cú pháp nháy đơn (@'status') thành nháy kép (@"status")
+        if (item[@"status"]) {
             [theSwitch setOn:[item[@"status"] boolValue]];
         } else {
             [theSwitch setOn:[[settings objectForKey:item[@"switchKey"]] boolValue]];
