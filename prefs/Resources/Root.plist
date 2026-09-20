@@ -4,16 +4,17 @@
 <dict>
     <key>items</key>
     <array>
+        <!-- Nhóm 1: Trung tâm điều khiển cốt lõi -->
         <dict>
             <key>cell</key>
             <string>PSGroupCell</string>
             <key>label</key>
-            <string>Trung tâm Điều khiển MBBypass</string>
+            <string>Trung tâm Điều khiển Cốt lõi</string>
             <key>footerText</key>
-            <string>Quản lý bật/tắt tính năng ẩn jailbreak cho từng ứng dụng và trò chơi.</string>
+            <string>Kích hoạt công tắc tổng để mở khóa toàn bộ hệ thống ẩn Sandbox và các thiết lập chuyên sâu bên dưới.</string>
         </dict>
         
-        <!-- Công tắc tổng -->
+        <!-- Công tắc tổng (Master Switch) -->
         <dict>
             <key>cell</key>
             <string>PSSwitchCell</string>
@@ -27,13 +28,16 @@
             <string>Kích hoạt Bypass Tổng</string>
         </dict>
 
-        <!-- Nút chuyển hướng vào danh sách chi tiết 6 app -->
+        <!-- Nhóm 2: Liên kết đến bảng điều khiển chi tiết ứng dụng -->
         <dict>
             <key>cell</key>
             <string>PSGroupCell</string>
             <key>label</key>
-            <string>Danh sách Mục tiêu</string>
+            <string>Quản lý Ứng dụng & Trò chơi</string>
+            <key>footerText</key>
+            <string>Chọn cấu hình chi tiết cho từng ứng dụng ngân hàng, ví điện tử và game.</string>
         </dict>
+        
         <dict>
             <key>cell</key>
             <string>PSLinkCell</string>
@@ -42,7 +46,7 @@
             <key>isController</key>
             <true/>
             <key>label</key>
-            <string>Tùy chỉnh Ứng dụng & Game</string>
+            <string>Cấu hình Ứng dụng cụ thể</string>
         </dict>
     </array>
     <key>title</key>
