@@ -1,20 +1,20 @@
-TARGET := iphone:clang:latest:14.0
-INSTALL_TARGET_PROCESSES = SpringBoard
-
 ARCHS = arm64
+TARGET = iphone:clang:14.5:14.0
+
+# Bật cơ chế tự động phân tách đường dẫn theo chuẩn Rootless
 THEOS_PACKAGE_SCHEME = rootless
+
+PACKAGE_VERSION = 1.0.0
 
 include $(THEOS)/makefiles/common.mk
 
-TWEAK_NAME = MBBypass
+BUNDLE_NAME = MBBypass
 
-MBBypass_FILES = Tweak.x
-MBBypass_CFLAGS = -fobjc-arc
+MBBypass_FILES = MBBypassRootListController.m
+MBBypass_FRAMEWORKS = UIKit Foundation
+MBBypass_PRIVATE_FRAMEWORKS = Preferences
 MBBypass_EXTRA_FRAMEWORKS += Cephei CepheiUI
-MBBypass_CODESIGN_FLAGS = -Sentitlements.plist
+MBBypass_INSTALL_PATH = /Library/PreferenceLoader/Preferences/
+MBBypass_CFLAGS = -fobjc-arc
 
-include $(THEOS_MAKE_PATH)/tweak.mk
-
-subprojects += prefs
-
-include $(THEOS_MAKE_PATH)/aggregate.mk
+include $(THEOS_MAKE_PATH)/bundle.mk
