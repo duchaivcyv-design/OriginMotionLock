@@ -75,12 +75,14 @@ jobs:
           rm -rf $HOME/theos/sdks
           git clone https://github.com/theos/sdks.git $HOME/theos/sdks --depth=1
 
-      - name: Install Cephei Headers
+      - name: Install Cephei Headers Properly
         run: |
-          mkdir -p $HOME/theos/include/Cephei $HOME/theos/include/CepheiUI
-          echo '#import <Foundation/Foundation.h>' > $HOME/theos/include/CepheiUI/HBListController.h
-          echo '@interface HBListController : PSListController @end' >> $HOME/theos/include/CepheiUI/HBListController.h
-          echo '#import <Foundation/Foundation.h>' > $HOME/theos/include/Cephei/HBPreferences.h
+          rm -rf /tmp/cephei.zip /tmp/Cephei-main
+          curl -sL https://github.com/AdamDemasi/Cephei/archive/refs/heads/main.zip -o /tmp/cephei.zip
+          unzip -q /tmp/cephei.zip -d /tmp/
+          mkdir -p $HOME/theos/include
+          cp -r /tmp/Cephei-main/Cephei $HOME/theos/include/
+          cp -r /tmp/Cephei-main/CepheiUI $HOME/theos/include/
 
       - name: Build Package
         env:
