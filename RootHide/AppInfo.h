@@ -1,44 +1,59 @@
 #import <UIKit/UIKit.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface LSPlugInKitProxy : NSObject
+@property (nonatomic, readonly) NSURL *dataContainerURL;
 - (NSString *)bundleIdentifier;
-@property (nonatomic,readonly) NSURL *dataContainerURL;
 @end
 
 @interface AppInfo : NSObject
-@property (nonatomic, strong) NSString *infoPlistPath;
 
-@property (nonatomic, readonly) NSString* bundleIdentifier;
-@property (nonatomic, readonly) NSString* bundleExecutable;
-@property (nonatomic, readonly) NSString* name;
-@property (nonatomic, readonly) UIImage* icon;
-@property (nonatomic, readonly) NSURL *bundleURL;
-@property (nonatomic, readonly) NSURL *containerURL;
+@property (nonatomic, strong, nullable) NSString *infoPlistPath;
 
-@property (nonatomic, readonly) NSString *applicationDSID;
-@property (nonatomic, readonly) NSString *applicationIdentifier;
-@property (nonatomic, readonly) NSString *applicationType;
-@property (nonatomic, readonly) NSNumber *dynamicDiskUsage;
+// --- Thông tin cơ bản ---
+@property (nonatomic, readonly, nullable) NSString *bundleIdentifier;
+@property (nonatomic, readonly, nullable) NSString *bundleExecutable;
+@property (nonatomic, readonly, nullable) NSString *name;
+@property (nonatomic, readonly, nullable) UIImage *icon;
 
-@property (nonatomic, readonly) NSArray *groupIdentifiers;
-@property (nonatomic, readonly) NSDictionary *groupContainerURLs;
-@property (nonatomic, readonly) NSNumber *itemID;
-@property (nonatomic, readonly) NSString *itemName;
-@property (nonatomic, readonly) NSString *minimumSystemVersion;
-@property (nonatomic, readonly) NSArray *requiredDeviceCapabilities;
-@property (nonatomic, readonly) NSString *roleIdentifier;
-@property (nonatomic, readonly) NSString *sdkVersion;
-@property (nonatomic, readonly) NSString *shortVersionString;
-@property (nonatomic, readonly) NSString *sourceAppIdentifier;
-@property (nonatomic, readonly) NSNumber *staticDiskUsage;
-@property (nonatomic, readonly) NSString *teamID;
-@property (nonatomic, readonly) NSString *vendorName;
+// --- Đường dẫn ---
+@property (nonatomic, readonly, nullable) NSURL *bundleURL;
+@property (nonatomic, readonly, nullable) NSURL *containerURL;
 
-@property (nonatomic,readonly) NSArray<LSPlugInKitProxy *> *plugInKitPlugins;
+// --- Định danh & Phân loại ---
+@property (nonatomic, readonly, nullable) NSString *applicationDSID;
+@property (nonatomic, readonly, nullable) NSString *applicationIdentifier;
+@property (nonatomic, readonly, nullable) NSString *applicationType;
+@property (nonatomic, readonly, nullable) NSString *roleIdentifier;
+@property (nonatomic, readonly, nullable) NSString *sourceAppIdentifier;
+@property (nonatomic, readonly, nullable) NSString *teamID;
+@property (nonatomic, readonly, nullable) NSString *vendorName;
 
+// --- Phiên bản & Hệ thống ---
+@property (nonatomic, readonly, nullable) NSString *minimumSystemVersion;
+@property (nonatomic, readonly, nullable) NSString *sdkVersion;
+@property (nonatomic, readonly, nullable) NSString *shortVersionString;
+@property (nonatomic, readonly, nullable) NSArray *requiredDeviceCapabilities;
+
+// --- Dung lượng & Nhóm chứa ---
+@property (nonatomic, readonly, nullable) NSNumber *dynamicDiskUsage;
+@property (nonatomic, readonly, nullable) NSNumber *staticDiskUsage;
+@property (nonatomic, readonly, nullable) NSArray *groupIdentifiers;
+@property (nonatomic, readonly, nullable) NSDictionary *groupContainerURLs;
+
+// --- App Store ---
+@property (nonatomic, readonly, nullable) NSNumber *itemID;
+@property (nonatomic, readonly, nullable) NSString *itemName;
+
+// --- Plugin & Trạng thái ---
+@property (nonatomic, readonly, nullable) NSArray<LSPlugInKitProxy *> *plugInKitPlugins;
 @property (nonatomic, readonly) BOOL isHiddenApp;
 
+// --- Khởi tạo ---
 + (instancetype)appWithPrivateProxy:(id)privateProxy;
-+ (instancetype)appWithBundleIdentifier:(NSString*)bundleIdentifier;
++ (instancetype)appWithBundleIdentifier:(NSString *)bundleIdentifier;
 
 @end
+
+NS_ASSUME_NONNULL_END
