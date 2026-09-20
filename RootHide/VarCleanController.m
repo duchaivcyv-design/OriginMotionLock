@@ -264,7 +264,6 @@ NSArray* GetDirectoryContents(NSString* path)
     NSMutableDictionary *customedRules = [NSMutableDictionary dictionaryWithContentsOfFile:customedRulesFilePath];
     
     [self updateForRules:rules customed:customedRules newData:newData keepState:keepState];
-    // Tiếp tục xử lý các đường dẫn còn lại không nằm trong danh sách built-in
     [self updateForRules:customedRules customed:nil newData:newData keepState:keepState];
 
     NSComparator sorter = ^NSComparisonResult(NSDictionary* a, NSDictionary* b)
@@ -400,7 +399,6 @@ NSArray* GetDirectoryContents(NSString* path)
     [checkbox setSelected:[item[@"checked"] boolValue]];
     cell.accessoryView = checkbox;
     
-    // Xóa các gesture cũ trước khi add mới để tránh bị trùng lặp cell reuse
     for (UIGestureRecognizer *subGesture in cell.contentView.gestureRecognizers) {
         [cell.contentView removeGestureRecognizer:subGesture];
     }
