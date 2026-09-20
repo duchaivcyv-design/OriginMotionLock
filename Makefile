@@ -17,7 +17,7 @@ RootHide_FRAMEWORKS = UIKit Foundation IOKit
 RootHide_CODESIGN_FLAGS = -Sentitlements.plist
 RootHide_INSTALL_PATH = /Applications
 
-# Thêm cờ này để bỏ qua các lỗi cảnh báo/deprecated khi build trên SDK mới
+# Thêm cờ -Wno-error=deprecated-declarations để bỏ qua lỗi keyWindow
 RootHide_CFLAGS = -fobjc-arc -Wno-error=nonportable-include-path -Wno-error=deprecated-declarations -Wno-error=undeclared-selector
 
 include $(THEOS_MAKE_PATH)/application.mk
