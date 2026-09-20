@@ -4,52 +4,45 @@
 <dict>
     <key>items</key>
     <array>
-        <!-- Nhóm Cài đặt chung -->
         <dict>
             <key>cell</key>
             <string>PSGroupCell</string>
             <key>label</key>
-            <string>Cấu hình chung MBBypass</string>
+            <string>Trung tâm Điều khiển MBBypass</string>
+            <key>footerText</key>
+            <string>Quản lý bật/tắt tính năng ẩn jailbreak cho từng ứng dụng và trò chơi.</string>
         </dict>
         
-        <!-- Công tắc Tổng: Liên kết với key 'isEnabled' trong tệp com.onyx.mbbypass.plist -->
+        <!-- Công tắc tổng -->
         <dict>
             <key>cell</key>
             <string>PSSwitchCell</string>
             <key>default</key>
             <true/>
             <key>defaults</key>
-            <string>com.onyx.mbbypass</string> <!-- Trỏ đúng tên domain gốc -->
+            <string>com.onyx.mbbypass</string>
             <key>key</key>
             <string>isEnabled</string>
             <key>label</key>
-            <string>Kích hoạt Tweak</string>
-            <key>postNotification</key>
-            <string>com.onyx.mbbypass/reloadPreferences</string>
+            <string>Kích hoạt Bypass Tổng</string>
         </dict>
 
-        <!-- Nhóm ứng dụng -->
+        <!-- Nút chuyển hướng vào danh sách chi tiết 6 app -->
         <dict>
             <key>cell</key>
             <string>PSGroupCell</string>
             <key>label</key>
-            <string>Bỏ qua Jailbreak cho ứng dụng</string>
+            <string>Danh sách Mục tiêu</string>
         </dict>
-
-        <!-- Công tắc App: Liên kết với key 'enabled_com.mbmobile' trong tệp gốc -->
         <dict>
             <key>cell</key>
-            <string>PSSwitchCell</string>
-            <key>default</key>
+            <string>PSLinkCell</string>
+            <key>detail</key>
+            <string>MBBypassRootListController</string>
+            <key>isController</key>
             <true/>
-            <key>defaults</key>
-            <string>com.onyx.mbbypass</string> <!-- Trỏ đúng tên domain gốc -->
-            <key>key</key>
-            <string>enabled_com.mbmobile</string>
             <key>label</key>
-            <string>MB Bank</string>
-            <key>postNotification</key>
-            <string>com.onyx.mbbypass/reloadPreferences</string>
+            <string>Tùy chỉnh Ứng dụng & Game</string>
         </dict>
     </array>
     <key>title</key>
